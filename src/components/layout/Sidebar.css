@@ -1,0 +1,134 @@
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: white;
+  box-shadow: var(--shadow);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  height: var(--header-height);
+}
+
+.sidebar-header h2 {
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.close-sidebar {
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  color: var(--dark-text);
+  cursor: pointer;
+  display: block;
+}
+
+.sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.vendor-info {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.vendor-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 15px;
+}
+
+.vendor-details h3 {
+  font-size: 0.9rem;
+  margin: 0 0 5px 0;
+}
+
+.vendor-details p {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+.sidebar-nav {
+  padding: 15px 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  color: var(--dark-text);
+  transition: var(--transition);
+  position: relative;
+}
+
+.nav-item:hover {
+  background-color: rgba(67, 97, 238, 0.05);
+  color: var(--primary);
+}
+
+.nav-item.active {
+  background-color: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background-color: var(--primary);
+}
+
+.nav-icon {
+  margin-right: 15px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-text {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 270px;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
