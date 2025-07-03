@@ -232,7 +232,7 @@
 //               )}
 //             </div>
 //           </div>
-          
+
 //           <div className="order-total">
 //             <span>{formatCurrency(order.totalAmount)}</span>
 //           </div>
@@ -281,13 +281,13 @@
 //                 </tbody>
 //               </table>
 //             </div>
-            
+
 //             {order.customer?.email && (
 //               <div className="customer-email">
 //                 <strong>Email:</strong> {order.customer.email}
 //               </div>
 //             )}
-            
+
 //             <div className="full-address">
 //               <strong>Full Address:</strong> {order.customer?.address}, {order.customer?.city}, {order.customer?.pincode}
 //             </div>
@@ -323,7 +323,7 @@
 //             </button>
 //           </div>
 //         )}
-        
+
 //         {order.status === 'processing' && (
 //           <button 
 //             className="update-btn"
@@ -334,7 +334,7 @@
 //             Mark as Prepared
 //           </button>
 //         )}
-        
+
 //         {order.status === 'prepared' && (
 //           <button 
 //             className="update-btn"
@@ -367,7 +367,7 @@
 //             Mark Out for Delivery
 //           </button>
 //         )}
-        
+
 //         <div className="secondary-actions">
 //           <button 
 //             className="view-btn"
@@ -391,7 +391,7 @@
 //   const [loading, setLoading] = useState(true);
 //   const [error, setError] = useState('');
 //   const [selectedOrder, setSelectedOrder] = useState(null);
-  
+
 //   // Filter states
 //   const [statusFilter, setStatusFilter] = useState('all');
 //   const [searchTerm, setSearchTerm] = useState('');
@@ -417,26 +417,26 @@
 //     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
 //       if (user) {
 //         setCurrentVendor(user);
-        
+
 //         try {
 //           const shopsRef = ref(db, 'shops');
 //           const snapshot = await get(shopsRef);
-          
+
 //           if (snapshot.exists()) {
 //             const shopsData = snapshot.val();
-            
+
 //             // Enhanced vendor matching
 //             const matchingShop = Object.entries(shopsData).find(([shopId, shopData]) => {
 //               const userEmail = user.email?.toLowerCase();
 //               const shopEmail = shopData.email?.toLowerCase();
 //               const ownerEmail = shopData.owner?.toLowerCase();
 //               const ownerEmailField = shopData.ownerEmail?.toLowerCase();
-              
+
 //               return shopEmail === userEmail || 
 //                      ownerEmail === userEmail ||
 //                      ownerEmailField === userEmail;
 //             });
-            
+
 //             if (matchingShop) {
 //               const [shopId, shopData] = matchingShop;
 //               setVendorShop({
@@ -470,7 +470,7 @@
 
 //     setLoading(true);
 //     const ordersRef = ref(db, 'orders');
-    
+
 //     const unsubscribe = onValue(ordersRef, (snapshot) => {
 //       try {
 //         if (!snapshot.exists()) {
@@ -478,7 +478,7 @@
 //           setLoading(false);
 //           return;
 //         }
-        
+
 //         const data = snapshot.val();
 //         const ordersArray = Object.keys(data).map(key => ({
 //           id: key,
@@ -491,7 +491,7 @@
 //             }
 //           ]
 //         }));
-        
+
 //         // Enhanced order filtering for vendor
 //         const vendorOrders = ordersArray.filter(order => {
 //           // Check if order is assigned to this vendor
@@ -501,7 +501,7 @@
 //           )) {
 //             return true;
 //           }
-          
+
 //           // Check if order is pending confirmation for this vendor
 //           if (order.status === 'pending_vendor_confirmation' && order.assignedVendor && (
 //             order.assignedVendor.id === vendorShop.id ||
@@ -509,7 +509,7 @@
 //           )) {
 //             return true;
 //           }
-          
+
 //           return false;
 //         });
 
@@ -523,15 +523,15 @@
 //           }
 //           return new Date(b.orderDate) - new Date(a.orderDate);
 //         });
-        
+
 //         setOrders(vendorOrders);
 //         calculateStats(vendorOrders);
-        
+
 //         // Check for new pending confirmations
 //         const pendingConfirmations = vendorOrders.filter(o => o.status === 'pending_vendor_confirmation');
 //         if (pendingConfirmations.length > 0) {
 //           setUnreadCount(pendingConfirmations.length);
-          
+
 //           // Play notification sound for new orders
 //           if (pendingConfirmations.length > 0) {
 //             try {
@@ -542,20 +542,20 @@
 //             }
 //           }
 //         }
-        
+
 //         // Check for orders that should be automatically marked as delivered
 //         vendorOrders.forEach(order => {
 //           if (order.status === 'out_for_delivery' && order.outForDeliveryAt) {
 //             const outForDeliveryTime = new Date(order.outForDeliveryAt).getTime();
 //             const currentTime = new Date().getTime();
 //             const diffInMinutes = (currentTime - outForDeliveryTime) / (1000 * 60);
-            
+
 //             if (diffInMinutes >= 30) {
 //               handleDeliveryComplete(order.id);
 //             }
 //           }
 //         });
-        
+
 //         setLoading(false);
 //       } catch (err) {
 //         console.error('Error processing orders:', err);
@@ -610,13 +610,13 @@
 //     try {
 //       const orderRef = ref(db, `orders/${orderId}`);
 //       const snapshot = await get(orderRef);
-      
+
 //       if (!snapshot.exists()) {
 //         throw new Error('Order not found');
 //       }
-      
+
 //       const orderData = snapshot.val();
-      
+
 //       const updatedTimeline = [
 //         ...(orderData.timeline || []),
 //         {
@@ -630,7 +630,7 @@
 //           note: 'Order being prepared'
 //         }
 //       ];
-      
+
 //       await update(orderRef, {
 //         status: 'processing',
 //         vendor: {
@@ -647,7 +647,7 @@
 //         confirmedAt: new Date().toISOString(),
 //         timeline: updatedTimeline
 //       });
-      
+
 //       // Show success notification
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
@@ -655,7 +655,7 @@
 //         message: `Order #${orderId.slice(-6)} accepted successfully!`,
 //         timestamp: new Date().toISOString()
 //       }]);
-      
+
 //     } catch (error) {
 //       console.error('Error accepting order:', error);
 //       setNotifications(prev => [...prev, {
@@ -675,13 +675,13 @@
 //     try {
 //       const orderRef = ref(db, `orders/${orderId}`);
 //       const snapshot = await get(orderRef);
-      
+
 //       if (!snapshot.exists()) {
 //         throw new Error('Order not found');
 //       }
-      
+
 //       const orderData = snapshot.val();
-      
+
 //       const updatedTimeline = [
 //         ...(orderData.timeline || []),
 //         {
@@ -690,7 +690,7 @@
 //           note: `Order rejected by ${vendorShop.name}`
 //         }
 //       ];
-      
+
 //       // Update to 'pending' instead of 'pending_manual_assignment' to align with admin panel
 //       await update(orderRef, {
 //         status: 'pending',
@@ -701,14 +701,14 @@
 //         rejectedAt: new Date().toISOString(),
 //         timeline: updatedTimeline
 //       });
-      
+
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
 //         type: 'info',
 //         message: `Order #${orderId.slice(-6)} rejected. It will be reassigned.`,
 //         timestamp: new Date().toISOString()
 //       }]);
-      
+
 //     } catch (error) {
 //       console.error('Error rejecting order:', error);
 //       setNotifications(prev => [...prev, {
@@ -723,22 +723,22 @@
 //   // Handle timer expiration (auto-reject)
 //   const handleTimerExpire = async (orderId) => {
 //     console.log(`Timer expired for order ${orderId}. Auto-rejecting.`);
-    
+
 //     try {
 //       const orderRef = ref(db, `orders/${orderId}`);
 //       const snapshot = await get(orderRef);
-      
+
 //       if (!snapshot.exists()) {
 //         return;
 //       }
-      
+
 //       const orderData = snapshot.val();
-      
+
 //       // Only auto-reject if the order is still in pending_vendor_confirmation state
 //       if (orderData.status !== 'pending_vendor_confirmation') {
 //         return;
 //       }
-      
+
 //       const updatedTimeline = [
 //         ...(orderData.timeline || []),
 //         {
@@ -747,7 +747,7 @@
 //           note: `Order automatically rejected due to no response from ${vendorShop.name} within 5 minutes`
 //         }
 //       ];
-      
+
 //       await update(orderRef, {
 //         status: 'pending',
 //         assignedVendor: null,
@@ -757,14 +757,14 @@
 //         rejectedAt: new Date().toISOString(),
 //         timeline: updatedTimeline
 //       });
-      
+
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
 //         type: 'warning',
 //         message: `Order #${orderId.slice(-6)} was auto-rejected due to timeout.`,
 //         timestamp: new Date().toISOString()
 //       }]);
-      
+
 //     } catch (error) {
 //       console.error('Error auto-rejecting order:', error);
 //     }
@@ -775,11 +775,11 @@
 //     try {
 //       const orderRef = ref(db, `orders/${orderId}`);
 //       const snapshot = await get(orderRef);
-      
+
 //       if (!snapshot.exists()) {
 //         throw new Error('Order not found');
 //       }
-      
+
 //       const orderData = snapshot.val();
 //       const statusMessages = {
 //         'processing': 'Order is being prepared',
@@ -788,7 +788,7 @@
 //         'out_for_delivery': 'Order is out for delivery',
 //         'delivered': 'Order has been delivered'
 //       };
-      
+
 //       const updatedTimeline = [
 //         ...(orderData.timeline || []),
 //         {
@@ -797,27 +797,27 @@
 //           note: statusMessages[newStatus] || `Status updated to ${newStatus}`
 //         }
 //       ];
-      
+
 //       const updateData = {
 //         status: newStatus,
 //         timeline: updatedTimeline,
 //         lastUpdated: new Date().toISOString()
 //       };
-      
+
 //       // Add timestamp for out_for_delivery status
 //       if (newStatus === 'out_for_delivery') {
 //         updateData.outForDeliveryAt = new Date().toISOString();
 //       }
-      
+
 //       await update(orderRef, updateData);
-      
+
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
 //         type: 'success',
 //         message: `Order status updated to ${getStatusText(newStatus)}`,
 //         timestamp: new Date().toISOString()
 //       }]);
-      
+
 //     } catch (error) {
 //       console.error('Error updating order status:', error);
 //       setNotifications(prev => [...prev, {
@@ -835,18 +835,18 @@
 //       // First, get the order details
 //       const orderRef = ref(db, `orders/${orderId}`);
 //       const snapshot = await get(orderRef);
-      
+
 //       if (!snapshot.exists()) {
 //         throw new Error('Order not found');
 //       }
-      
+
 //       const orderData = snapshot.val();
-      
+
 //       // Set status to "assigning_delivery" to prevent multiple assignments
 //       await update(orderRef, {
 //         status: 'assigning_delivery'
 //       });
-      
+
 //       // Show loading notification
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
@@ -854,14 +854,14 @@
 //         message: `Assigning delivery for Order #${orderId.slice(-6)}...`,
 //         timestamp: new Date().toISOString()
 //       }]);
-      
+
 //       // Generate a unique request ID for Porter
 //       const requestId = `order_${orderId}_${Date.now()}`;
-      
+
 //       // Get vendor and customer addresses
 //       const vendorAddress = orderData.vendor?.location || {};
 //       const customerAddress = orderData.customer || {};
-      
+
 //       // Format data for Porter API based on their required structure
 //       const porterRequestData = {
 //         request_id: requestId,
@@ -910,17 +910,17 @@
 //           }
 //         }
 //       };
-      
+
 //       // Due to CORS restrictions in browser environment, we use a proxy or backend
 //       // This is a simulation that would be replaced with actual API calls in production
 //       const sendPorterRequest = async () => {
 //         try {
 //           // In production, this would be a call to your backend API that handles Porter requests
 //           // For now, we're simulating the response
-          
+
 //           // Simulate API call delay
 //           await new Promise(resolve => setTimeout(resolve, 2000));
-          
+
 //           // Simulate Porter API response based on their documentation
 //           return {
 //             success: true,
@@ -936,7 +936,7 @@
 //               tracking_url: `https://track.porter.in/track/${Math.floor(10000000 + Math.random() * 90000000)}`
 //             }
 //           };
-          
+
 //           /* PRODUCTION CODE - Uncomment and use with backend
 //           // Make API call to your backend which will handle Porter API
 //           const response = await fetch('/api/assign-delivery', {
@@ -949,12 +949,12 @@
 //               porterRequestData
 //             })
 //           });
-          
+
 //           if (!response.ok) {
 //             const errorData = await response.json();
 //             throw new Error(errorData.message || 'Failed to create delivery with Porter');
 //           }
-          
+
 //           return await response.json();
 //           */
 //         } catch (error) {
@@ -962,17 +962,17 @@
 //           throw new Error(`Failed to create delivery: ${error.message}`);
 //         }
 //       };
-      
+
 //       // Call Porter API (via simulation or backend)
 //       const porterResponse = await sendPorterRequest();
-      
+
 //       if (!porterResponse.success) {
 //         throw new Error('Failed to create delivery with Porter');
 //       }
-      
+
 //       // Extract delivery information from response
 //       const deliveryInfo = porterResponse.data;
-      
+
 //       // Update order with delivery information
 //       const updatedTimeline = [
 //         ...(orderData.timeline || []),
@@ -982,7 +982,7 @@
 //           note: `Delivery assigned to ${deliveryInfo.delivery_partner.name} - Tracking ID: ${deliveryInfo.order_id}`
 //         }
 //       ];
-      
+
 //       await update(orderRef, {
 //         status: 'delivery_assigned',
 //         delivery: {
@@ -998,23 +998,23 @@
 //         },
 //         timeline: updatedTimeline
 //       });
-      
+
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
 //         type: 'success',
 //         message: `Delivery assigned to ${deliveryInfo.delivery_partner.name} for Order #${orderId.slice(-6)}!`,
 //         timestamp: new Date().toISOString()
 //       }]);
-      
+
 //     } catch (error) {
 //       console.error('Error assigning delivery:', error);
-      
+
 //       // Revert status if assignment fails
 //       const orderRef = ref(db, `orders/${orderId}`);
 //       await update(orderRef, {
 //         status: 'ready_for_pickup'
 //       });
-      
+
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
 //         type: 'error',
@@ -1029,18 +1029,18 @@
 //     try {
 //       const orderRef = ref(db, `orders/${orderId}`);
 //       const snapshot = await get(orderRef);
-      
+
 //       if (!snapshot.exists()) {
 //         return;
 //       }
-      
+
 //       const orderData = snapshot.val();
-      
+
 //       // Skip if already delivered
 //       if (orderData.status === 'delivered') {
 //         return;
 //       }
-      
+
 //       const updatedTimeline = [
 //         ...(orderData.timeline || []),
 //         {
@@ -1049,20 +1049,20 @@
 //           note: 'Order delivered successfully'
 //         }
 //       ];
-      
+
 //       await update(orderRef, {
 //         status: 'delivered',
 //         deliveredAt: new Date().toISOString(),
 //         timeline: updatedTimeline
 //       });
-      
+
 //       setNotifications(prev => [...prev, {
 //         id: Date.now(),
 //         type: 'success',
 //         message: `Order #${orderId.slice(-6)} marked as delivered!`,
 //         timestamp: new Date().toISOString()
 //       }]);
-      
+
 //     } catch (error) {
 //       console.error('Error completing delivery:', error);
 //     }
@@ -1071,12 +1071,12 @@
 //   // Filter orders based on current filters
 //   useEffect(() => {
 //     let filtered = [...orders];
-    
+
 //     // Status filter
 //     if (statusFilter !== 'all') {
 //       filtered = filtered.filter(order => order.status === statusFilter);
 //     }
-    
+
 //     // Search filter
 //     if (searchTerm) {
 //       filtered = filtered.filter(order => 
@@ -1085,15 +1085,15 @@
 //         (order.customer?.phone && order.customer.phone.includes(searchTerm))
 //       );
 //     }
-    
+
 //     // Date filter
 //     if (dateFilter !== 'all') {
 //       const now = new Date();
 //       const today = new Date(now.setHours(0, 0, 0, 0));
-      
+
 //       filtered = filtered.filter(order => {
 //         const orderDate = new Date(order.orderDate);
-        
+
 //         switch (dateFilter) {
 //           case 'today':
 //             return orderDate >= today;
@@ -1110,7 +1110,7 @@
 //         }
 //       });
 //     }
-    
+
 //     setFilteredOrders(filtered);
 //   }, [orders, statusFilter, searchTerm, dateFilter]);
 
@@ -1202,7 +1202,7 @@
 //   // Order details view
 //   if (selectedOrder) {
 //     const order = orders.find(o => o.id === selectedOrder);
-    
+
 //     if (!order) {
 //       return (
 //         <div className="vendor-orders-page">
@@ -1357,7 +1357,7 @@
 //                 </button>
 //               </div>
 //             )}
-            
+
 //             {order.status === 'processing' && (
 //               <button 
 //                 className="update-button-large"
@@ -1367,7 +1367,7 @@
 //                 Mark as Prepared
 //               </button>
 //             )}
-            
+
 //             {order.status === 'prepared' && (
 //               <button 
 //                 className="update-button-large"
@@ -1454,7 +1454,7 @@
 //             <div className="stat-label">Total Orders</div>
 //           </div>
 //         </div>
-        
+
 //         <div className="stat-card urgent">
 //           <div className="stat-icon">
 //             <AlertTriangle size={24} />
@@ -1464,7 +1464,7 @@
 //             <div className="stat-label">Needs Confirmation</div>
 //           </div>
 //         </div>
-        
+
 //         <div className="stat-card processing">
 //           <div className="stat-icon">
 //             <RefreshCw size={24} />
@@ -1484,7 +1484,7 @@
 //             <div className="stat-label">Out for Delivery</div>
 //           </div>
 //         </div>
-        
+
 //         <div className="stat-card completed">
 //           <div className="stat-icon">
 //             <TrendingUp size={24} />
@@ -1507,7 +1507,7 @@
 //             onChange={(e) => setSearchTerm(e.target.value)}
 //           />
 //         </div>
-        
+
 //         <div className="filter-controls">
 //           <select 
 //             value={statusFilter} 
@@ -1522,7 +1522,7 @@
 //             <option value="out_for_delivery">Out for Delivery</option>
 //             <option value="delivered">Delivered</option>
 //           </select>
-          
+
 //           <select 
 //             value={dateFilter} 
 //             onChange={(e) => setDateFilter(e.target.value)}
@@ -1585,13 +1585,13 @@ import React, { useState, useEffect } from 'react';
 import { ref, onValue, update, get } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../services/firebase';
-import { 
-  Package, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  RefreshCw, 
-  MapPin, 
+import {
+  Package,
+  Clock,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  MapPin,
   Phone,
   User,
   Calendar,
@@ -1626,7 +1626,10 @@ const VendorOrderTimer = ({ order, onTimerExpire }) => {
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    if (!order || order.status !== 'pending_vendor_confirmation' || !order.vendorAssignedAt) {
+    if (!order ||
+      (order.status !== 'pending_vendor_confirmation' &&
+        order.status !== 'pending_vendor_manual_acceptance') ||
+      !order.vendorAssignedAt) {
       setTimeRemaining(0);
       return;
     }
@@ -1653,7 +1656,9 @@ const VendorOrderTimer = ({ order, onTimerExpire }) => {
     return () => clearInterval(interval);
   }, [order, onTimerExpire, isExpired]);
 
-  if (timeRemaining === 0 || order?.status !== 'pending_vendor_confirmation') return null;
+  if (timeRemaining === 0 ||
+    (order?.status !== 'pending_vendor_confirmation' &&
+      order?.status !== 'pending_vendor_manual_acceptance')) return null;
 
   const minutes = Math.floor(timeRemaining / 60000);
   const seconds = Math.floor((timeRemaining % 60000) / 1000);
@@ -1719,11 +1724,11 @@ const DeliveryTimer = ({ order, onDeliveryComplete }) => {
 };
 
 // Order Card Component
-const OrderCard = ({ 
-  order, 
-  onAccept, 
-  onReject, 
-  onStatusUpdate, 
+const OrderCard = ({
+  order,
+  onAccept,
+  onReject,
+  onStatusUpdate,
   onViewDetails,
   onAssignDelivery,
   onDeliveryComplete,
@@ -1777,16 +1782,16 @@ const OrderCard = ({
 
       {/* Timer for pending confirmation */}
       {order.status === 'pending_vendor_confirmation' && (
-        <VendorOrderTimer 
-          order={order} 
+        <VendorOrderTimer
+          order={order}
           onTimerExpire={() => onTimerExpire(order.id)}
         />
       )}
 
       {/* Timer for out for delivery */}
       {order.status === 'out_for_delivery' && (
-        <DeliveryTimer 
-          order={order} 
+        <DeliveryTimer
+          order={order}
           onDeliveryComplete={onDeliveryComplete}
         />
       )}
@@ -1798,7 +1803,7 @@ const OrderCard = ({
             <User size={14} />
             <span>{order.customer?.fullName}</span>
           </div>
-         
+
           <div className="customer-address" title={`${order.customer?.address}, ${order.customer?.city}`}>
             <MapPin size={14} />
             <span>{order.customer?.address?.substring(0, 30)}...</span>
@@ -1817,7 +1822,7 @@ const OrderCard = ({
               )}
             </div>
           </div>
-          
+
           <div className="order-total">
             <span>{formatCurrency(totalWithoutTax)}</span>
           </div>
@@ -1866,13 +1871,13 @@ const OrderCard = ({
                 </tbody>
               </table>
             </div>
-            
+
             {order.customer?.email && (
               <div className="customer-email">
                 <strong>Email:</strong> {order.customer.email}
               </div>
             )}
-            
+
             <div className="full-address">
               <strong>Full Address:</strong> {order.customer?.address}, {order.customer?.city}, {order.customer?.pincode}
             </div>
@@ -1886,31 +1891,30 @@ const OrderCard = ({
         )}
       </div>
 
-      {/* Order Actions */}
       <div className="order-actions">
-        {order.status === 'pending_vendor_confirmation' && (
-          <div className="confirmation-actions">
-            <button 
-              className="accept-btn"
-              onClick={() => onAccept(order.id)}
-              disabled={updating}
-            >
-              <ThumbsUp size={16} />
-              Accept Order
-            </button>
-            <button 
-              className="reject-btn"
-              onClick={() => onReject(order.id)}
-              disabled={updating}
-            >
-              <ThumbsDown size={16} />
-              Reject
-            </button>
-          </div>
-        )}
-        
+        {(order.status === 'pending_vendor_confirmation' ||
+          order.status === 'pending_vendor_manual_acceptance') && (
+            <div className="confirmation-actions">
+              <button
+                className="accept-btn"
+                onClick={() => onAccept(order.id)}
+                disabled={updating}
+              >
+                <ThumbsUp size={16} />
+                Accept Order
+              </button>
+              <button
+                className="reject-btn"
+                onClick={() => onReject(order.id)}
+                disabled={updating}
+              >
+                <ThumbsDown size={16} />
+                Reject
+              </button>
+            </div>
+          )}
         {order.status === 'processing' && (
-          <button 
+          <button
             className="update-btn"
             onClick={() => handleStatusUpdate('prepared')}
             disabled={updating}
@@ -1919,9 +1923,9 @@ const OrderCard = ({
             Mark as Prepared
           </button>
         )}
-        
+
         {order.status === 'prepared' && (
-          <button 
+          <button
             className="update-btn"
             onClick={() => handleStatusUpdate('ready_for_pickup')}
             disabled={updating}
@@ -1932,7 +1936,7 @@ const OrderCard = ({
         )}
 
         {order.status === 'ready_for_pickup' && (
-          <button 
+          <button
             className="assign-delivery-btn"
             onClick={() => onAssignDelivery(order.id)}
             disabled={updating}
@@ -1943,7 +1947,7 @@ const OrderCard = ({
         )}
 
         {order.delivery && order.status === 'delivery_assigned' && (
-          <button 
+          <button
             className="out-for-delivery-btn"
             onClick={() => handleStatusUpdate('out_for_delivery')}
             disabled={updating}
@@ -1952,9 +1956,9 @@ const OrderCard = ({
             Mark Out for Delivery
           </button>
         )}
-        
+
         <div className="secondary-actions">
-          <button 
+          <button
             className="view-btn"
             onClick={() => onViewDetails(order.id)}
           >
@@ -1976,7 +1980,7 @@ const VendorOrdersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
-  
+
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -2002,26 +2006,26 @@ const VendorOrdersPage = () => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentVendor(user);
-        
+
         try {
           const shopsRef = ref(db, 'shops');
           const snapshot = await get(shopsRef);
-          
+
           if (snapshot.exists()) {
             const shopsData = snapshot.val();
-            
+
             // Enhanced vendor matching
             const matchingShop = Object.entries(shopsData).find(([shopId, shopData]) => {
               const userEmail = user.email?.toLowerCase();
               const shopEmail = shopData.email?.toLowerCase();
               const ownerEmail = shopData.owner?.toLowerCase();
               const ownerEmailField = shopData.ownerEmail?.toLowerCase();
-              
-              return shopEmail === userEmail || 
-                     ownerEmail === userEmail ||
-                     ownerEmailField === userEmail;
+
+              return shopEmail === userEmail ||
+                ownerEmail === userEmail ||
+                ownerEmailField === userEmail;
             });
-            
+
             if (matchingShop) {
               const [shopId, shopData] = matchingShop;
               setVendorShop({
@@ -2055,7 +2059,7 @@ const VendorOrdersPage = () => {
 
     setLoading(true);
     const ordersRef = ref(db, 'orders');
-    
+
     const unsubscribe = onValue(ordersRef, (snapshot) => {
       try {
         if (!snapshot.exists()) {
@@ -2063,20 +2067,21 @@ const VendorOrdersPage = () => {
           setLoading(false);
           return;
         }
-        
+
         const data = snapshot.val();
         const ordersArray = Object.keys(data).map(key => ({
           id: key,
           ...data[key],
           timeline: data[key].timeline || [
-            { 
-              status: 'order_placed', 
+            {
+              status: 'order_placed',
               time: data[key].orderDate || new Date().toISOString(),
-              note: 'Order placed successfully' 
+              note: 'Order placed successfully'
             }
           ]
         }));
-        
+
+        // Enhanced order filtering for vendor
         // Enhanced order filtering for vendor
         const vendorOrders = ordersArray.filter(order => {
           // Check if order is assigned to this vendor
@@ -2086,15 +2091,17 @@ const VendorOrdersPage = () => {
           )) {
             return true;
           }
-          
-          // Check if order is pending confirmation for this vendor
-          if (order.status === 'pending_vendor_confirmation' && order.assignedVendor && (
-            order.assignedVendor.id === vendorShop.id ||
-            order.assignedVendor.email?.toLowerCase() === vendorShop.email?.toLowerCase()
-          )) {
+
+          // Check if order is pending confirmation for this vendor (both auto and manual)
+          if ((order.status === 'pending_vendor_confirmation' ||
+            order.status === 'pending_vendor_manual_acceptance') &&
+            order.assignedVendor && (
+              order.assignedVendor.id === vendorShop.id ||
+              order.assignedVendor.email?.toLowerCase() === vendorShop.email?.toLowerCase()
+            )) {
             return true;
           }
-          
+
           return false;
         });
 
@@ -2108,15 +2115,15 @@ const VendorOrdersPage = () => {
           }
           return new Date(b.orderDate) - new Date(a.orderDate);
         });
-        
+
         setOrders(vendorOrders);
         calculateStats(vendorOrders);
-        
+
         // Check for new pending confirmations
         const pendingConfirmations = vendorOrders.filter(o => o.status === 'pending_vendor_confirmation');
         if (pendingConfirmations.length > 0) {
           setUnreadCount(pendingConfirmations.length);
-          
+
           // Play notification sound for new orders
           if (pendingConfirmations.length > 0) {
             try {
@@ -2127,20 +2134,20 @@ const VendorOrdersPage = () => {
             }
           }
         }
-        
+
         // Check for orders that should be automatically marked as delivered
         vendorOrders.forEach(order => {
           if (order.status === 'out_for_delivery' && order.outForDeliveryAt) {
             const outForDeliveryTime = new Date(order.outForDeliveryAt).getTime();
             const currentTime = new Date().getTime();
             const diffInMinutes = (currentTime - outForDeliveryTime) / (1000 * 60);
-            
+
             if (diffInMinutes >= 30) {
               handleDeliveryComplete(order.id);
             }
           }
         });
-        
+
         setLoading(false);
       } catch (err) {
         console.error('Error processing orders:', err);
@@ -2200,13 +2207,13 @@ const VendorOrdersPage = () => {
     try {
       const orderRef = ref(db, `orders/${orderId}`);
       const snapshot = await get(orderRef);
-      
+
       if (!snapshot.exists()) {
         throw new Error('Order not found');
       }
-      
+
       const orderData = snapshot.val();
-      
+
       const updatedTimeline = [
         ...(orderData.timeline || []),
         {
@@ -2220,7 +2227,7 @@ const VendorOrdersPage = () => {
           note: 'Order being prepared'
         }
       ];
-      
+
       await update(orderRef, {
         status: 'processing',
         vendor: {
@@ -2237,7 +2244,7 @@ const VendorOrdersPage = () => {
         confirmedAt: new Date().toISOString(),
         timeline: updatedTimeline
       });
-      
+
       // Show success notification
       setNotifications(prev => [...prev, {
         id: Date.now(),
@@ -2245,7 +2252,7 @@ const VendorOrdersPage = () => {
         message: `Order #${orderId.slice(-6)} accepted successfully!`,
         timestamp: new Date().toISOString()
       }]);
-      
+
     } catch (error) {
       console.error('Error accepting order:', error);
       setNotifications(prev => [...prev, {
@@ -2265,13 +2272,13 @@ const VendorOrdersPage = () => {
     try {
       const orderRef = ref(db, `orders/${orderId}`);
       const snapshot = await get(orderRef);
-      
+
       if (!snapshot.exists()) {
         throw new Error('Order not found');
       }
-      
+
       const orderData = snapshot.val();
-      
+
       const updatedTimeline = [
         ...(orderData.timeline || []),
         {
@@ -2280,25 +2287,25 @@ const VendorOrdersPage = () => {
           note: `Order rejected by ${vendorShop.name}`
         }
       ];
-      
+
       // Update to 'pending' instead of 'pending_manual_assignment' to align with admin panel
       await update(orderRef, {
         status: 'pending',
         assignedVendor: null,
-        rejectedBy: orderData.rejectedBy 
-          ? [...orderData.rejectedBy, vendorShop.id] 
+        rejectedBy: orderData.rejectedBy
+          ? [...orderData.rejectedBy, vendorShop.id]
           : [vendorShop.id],
         rejectedAt: new Date().toISOString(),
         timeline: updatedTimeline
       });
-      
+
       setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'info',
         message: `Order #${orderId.slice(-6)} rejected. It will be reassigned.`,
         timestamp: new Date().toISOString()
       }]);
-      
+
     } catch (error) {
       console.error('Error rejecting order:', error);
       setNotifications(prev => [...prev, {
@@ -2313,22 +2320,23 @@ const VendorOrdersPage = () => {
   // Handle timer expiration (auto-reject)
   const handleTimerExpire = async (orderId) => {
     console.log(`Timer expired for order ${orderId}. Auto-rejecting.`);
-    
+
     try {
       const orderRef = ref(db, `orders/${orderId}`);
       const snapshot = await get(orderRef);
-      
+
       if (!snapshot.exists()) {
         return;
       }
-      
+
       const orderData = snapshot.val();
-      
-      // Only auto-reject if the order is still in pending_vendor_confirmation state
-      if (orderData.status !== 'pending_vendor_confirmation') {
+
+      // Only auto-reject if the order is still in pending confirmation state (auto or manual)
+      if (orderData.status !== 'pending_vendor_confirmation' &&
+        orderData.status !== 'pending_vendor_manual_acceptance') {
         return;
       }
-      
+
       const updatedTimeline = [
         ...(orderData.timeline || []),
         {
@@ -2337,24 +2345,24 @@ const VendorOrdersPage = () => {
           note: `Order automatically rejected due to no response from ${vendorShop.name} within 5 minutes`
         }
       ];
-      
+
       await update(orderRef, {
         status: 'pending',
         assignedVendor: null,
-        rejectedBy: orderData.rejectedBy 
-          ? [...orderData.rejectedBy, vendorShop.id] 
+        rejectedBy: orderData.rejectedBy
+          ? [...orderData.rejectedBy, vendorShop.id]
           : [vendorShop.id],
         rejectedAt: new Date().toISOString(),
         timeline: updatedTimeline
       });
-      
+
       setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'warning',
         message: `Order #${orderId.slice(-6)} was auto-rejected due to timeout.`,
         timestamp: new Date().toISOString()
       }]);
-      
+
     } catch (error) {
       console.error('Error auto-rejecting order:', error);
     }
@@ -2365,11 +2373,11 @@ const VendorOrdersPage = () => {
     try {
       const orderRef = ref(db, `orders/${orderId}`);
       const snapshot = await get(orderRef);
-      
+
       if (!snapshot.exists()) {
         throw new Error('Order not found');
       }
-      
+
       const orderData = snapshot.val();
       const statusMessages = {
         'processing': 'Order is being prepared',
@@ -2378,7 +2386,7 @@ const VendorOrdersPage = () => {
         'out_for_delivery': 'Order is out for delivery',
         'delivered': 'Order has been delivered'
       };
-      
+
       const updatedTimeline = [
         ...(orderData.timeline || []),
         {
@@ -2387,27 +2395,27 @@ const VendorOrdersPage = () => {
           note: statusMessages[newStatus] || `Status updated to ${newStatus}`
         }
       ];
-      
+
       const updateData = {
         status: newStatus,
         timeline: updatedTimeline,
         lastUpdated: new Date().toISOString()
       };
-      
+
       // Add timestamp for out_for_delivery status
       if (newStatus === 'out_for_delivery') {
         updateData.outForDeliveryAt = new Date().toISOString();
       }
-      
+
       await update(orderRef, updateData);
-      
+
       setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'success',
         message: `Order status updated to ${getStatusText(newStatus)}`,
         timestamp: new Date().toISOString()
       }]);
-      
+
     } catch (error) {
       console.error('Error updating order status:', error);
       setNotifications(prev => [...prev, {
@@ -2425,18 +2433,18 @@ const VendorOrdersPage = () => {
       // First, get the order details
       const orderRef = ref(db, `orders/${orderId}`);
       const snapshot = await get(orderRef);
-      
+
       if (!snapshot.exists()) {
         throw new Error('Order not found');
       }
-      
+
       const orderData = snapshot.val();
-      
+
       // Set status to "assigning_delivery" to prevent multiple assignments
       await update(orderRef, {
         status: 'assigning_delivery'
       });
-      
+
       // Show loading notification
       setNotifications(prev => [...prev, {
         id: Date.now(),
@@ -2444,14 +2452,14 @@ const VendorOrdersPage = () => {
         message: `Assigning delivery for Order #${orderId.slice(-6)}...`,
         timestamp: new Date().toISOString()
       }]);
-      
+
       // Generate a unique request ID for Porter
       const requestId = `order_${orderId}_${Date.now()}`;
-      
+
       // Get vendor and customer addresses
       const vendorAddress = orderData.vendor?.location || {};
       const customerAddress = orderData.customer || {};
-      
+
       // Format data for Porter API based on their required structure
       const porterRequestData = {
         request_id: requestId,
@@ -2500,17 +2508,17 @@ const VendorOrdersPage = () => {
           }
         }
       };
-      
+
       // Due to CORS restrictions in browser environment, we use a proxy or backend
       // This is a simulation that would be replaced with actual API calls in production
       const sendPorterRequest = async () => {
         try {
           // In production, this would be a call to your backend API that handles Porter requests
           // For now, we're simulating the response
-          
+
           // Simulate API call delay
           await new Promise(resolve => setTimeout(resolve, 2000));
-          
+
           // Simulate Porter API response based on their documentation
           return {
             success: true,
@@ -2526,7 +2534,7 @@ const VendorOrdersPage = () => {
               tracking_url: `https://track.porter.in/track/${Math.floor(10000000 + Math.random() * 90000000)}`
             }
           };
-          
+
           /* PRODUCTION CODE - Uncomment and use with backend
           // Make API call to your backend which will handle Porter API
           const response = await fetch('/api/assign-delivery', {
@@ -2552,17 +2560,17 @@ const VendorOrdersPage = () => {
           throw new Error(`Failed to create delivery: ${error.message}`);
         }
       };
-      
+
       // Call Porter API (via simulation or backend)
       const porterResponse = await sendPorterRequest();
-      
+
       if (!porterResponse.success) {
         throw new Error('Failed to create delivery with Porter');
       }
-      
+
       // Extract delivery information from response
       const deliveryInfo = porterResponse.data;
-      
+
       // Update order with delivery information
       const updatedTimeline = [
         ...(orderData.timeline || []),
@@ -2572,7 +2580,7 @@ const VendorOrdersPage = () => {
           note: `Delivery assigned to ${deliveryInfo.delivery_partner.name} - Tracking ID: ${deliveryInfo.order_id}`
         }
       ];
-      
+
       await update(orderRef, {
         status: 'delivery_assigned',
         delivery: {
@@ -2588,23 +2596,23 @@ const VendorOrdersPage = () => {
         },
         timeline: updatedTimeline
       });
-      
+
       setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'success',
         message: `Delivery assigned to ${deliveryInfo.delivery_partner.name} for Order #${orderId.slice(-6)}!`,
         timestamp: new Date().toISOString()
       }]);
-      
+
     } catch (error) {
       console.error('Error assigning delivery:', error);
-      
+
       // Revert status if assignment fails
       const orderRef = ref(db, `orders/${orderId}`);
       await update(orderRef, {
         status: 'ready_for_pickup'
       });
-      
+
       setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'error',
@@ -2619,18 +2627,18 @@ const VendorOrdersPage = () => {
     try {
       const orderRef = ref(db, `orders/${orderId}`);
       const snapshot = await get(orderRef);
-      
+
       if (!snapshot.exists()) {
         return;
       }
-      
+
       const orderData = snapshot.val();
-      
+
       // Skip if already delivered
       if (orderData.status === 'delivered') {
         return;
       }
-      
+
       const updatedTimeline = [
         ...(orderData.timeline || []),
         {
@@ -2639,20 +2647,20 @@ const VendorOrdersPage = () => {
           note: 'Order delivered successfully'
         }
       ];
-      
+
       await update(orderRef, {
         status: 'delivered',
         deliveredAt: new Date().toISOString(),
         timeline: updatedTimeline
       });
-      
+
       setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'success',
         message: `Order #${orderId.slice(-6)} marked as delivered!`,
         timestamp: new Date().toISOString()
       }]);
-      
+
     } catch (error) {
       console.error('Error completing delivery:', error);
     }
@@ -2661,29 +2669,29 @@ const VendorOrdersPage = () => {
   // Filter orders based on current filters
   useEffect(() => {
     let filtered = [...orders];
-    
+
     // Status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(order => order.status === statusFilter);
     }
-    
+
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(order => 
+      filtered = filtered.filter(order =>
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (order.customer?.fullName && order.customer.fullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (order.customer?.phone && order.customer.phone.includes(searchTerm))
       );
     }
-    
+
     // Date filter
     if (dateFilter !== 'all') {
       const now = new Date();
       const today = new Date(now.setHours(0, 0, 0, 0));
-      
+
       filtered = filtered.filter(order => {
         const orderDate = new Date(order.orderDate);
-        
+
         switch (dateFilter) {
           case 'today':
             return orderDate >= today;
@@ -2700,7 +2708,7 @@ const VendorOrdersPage = () => {
         }
       });
     }
-    
+
     setFilteredOrders(filtered);
   }, [orders, statusFilter, searchTerm, dateFilter]);
 
@@ -2741,6 +2749,7 @@ const VendorOrdersPage = () => {
   const getStatusText = (status) => {
     switch (status) {
       case 'pending_vendor_confirmation': return 'Awaiting Your Confirmation';
+      case 'pending_vendor_manual_acceptance': return 'Awaiting Your Confirmation (Manual)';
       case 'processing': return 'Processing';
       case 'prepared': return 'Prepared';
       case 'ready_for_pickup': return 'Ready for Pickup';
@@ -2792,7 +2801,7 @@ const VendorOrdersPage = () => {
   // Order details view
   if (selectedOrder) {
     const order = orders.find(o => o.id === selectedOrder);
-    
+
     if (!order) {
       return (
         <div className="vendor-orders-page">
@@ -2813,7 +2822,7 @@ const VendorOrdersPage = () => {
     return (
       <div className="vendor-orders-page">
         <div className="order-detail-header">
-          <button 
+          <button
             className="back-button"
             onClick={() => setSelectedOrder(null)}
           >
@@ -2827,15 +2836,15 @@ const VendorOrdersPage = () => {
         </div>
 
         {order.status === 'pending_vendor_confirmation' && (
-          <VendorOrderTimer 
-            order={order} 
+          <VendorOrderTimer
+            order={order}
             onTimerExpire={() => handleTimerExpire(order.id)}
           />
         )}
 
         {order.status === 'out_for_delivery' && (
-          <DeliveryTimer 
-            order={order} 
+          <DeliveryTimer
+            order={order}
             onDeliveryComplete={handleDeliveryComplete}
           />
         )}
@@ -2853,7 +2862,7 @@ const VendorOrdersPage = () => {
             </div>
 
             {/* Order Items - Using the new OrderItems component */}
-            <OrderItems 
+            <OrderItems
               items={order.items}
               subtotal={subtotal}
               deliveryCharge={deliveryCharge}
@@ -2896,7 +2905,7 @@ const VendorOrdersPage = () => {
                   )}
                   {order.delivery.trackingUrl && (
                     <p>
-                      <strong>Tracking Link:</strong> 
+                      <strong>Tracking Link:</strong>
                       <a href={order.delivery.trackingUrl} target="_blank" rel="noopener noreferrer" className="tracking-link">
                         Open Tracking
                       </a>
@@ -2928,14 +2937,14 @@ const VendorOrdersPage = () => {
           <div className="order-actions-detail">
             {order.status === 'pending_vendor_confirmation' && (
               <div className="confirmation-actions-detail">
-                <button 
+                <button
                   className="accept-button-large"
                   onClick={() => handleAcceptOrder(order.id)}
                 >
                   <ThumbsUp size={20} />
                   Accept This Order
                 </button>
-                <button 
+                <button
                   className="reject-button-large"
                   onClick={() => handleRejectOrder(order.id)}
                 >
@@ -2944,9 +2953,9 @@ const VendorOrdersPage = () => {
                 </button>
               </div>
             )}
-            
+
             {order.status === 'processing' && (
-              <button 
+              <button
                 className="update-button-large"
                 onClick={() => handleStatusUpdate(order.id, 'prepared')}
               >
@@ -2954,9 +2963,9 @@ const VendorOrdersPage = () => {
                 Mark as Prepared
               </button>
             )}
-            
+
             {order.status === 'prepared' && (
-              <button 
+              <button
                 className="update-button-large"
                 onClick={() => handleStatusUpdate(order.id, 'ready_for_pickup')}
               >
@@ -2966,7 +2975,7 @@ const VendorOrdersPage = () => {
             )}
 
             {order.status === 'ready_for_pickup' && (
-              <button 
+              <button
                 className="update-button-large"
                 onClick={() => handleAssignDelivery(order.id)}
               >
@@ -2976,7 +2985,7 @@ const VendorOrdersPage = () => {
             )}
 
             {order.delivery && order.status === 'delivery_assigned' && (
-              <button 
+              <button
                 className="update-button-large"
                 onClick={() => handleStatusUpdate(order.id, 'out_for_delivery')}
               >
@@ -3006,7 +3015,7 @@ const VendorOrdersPage = () => {
           )}
         </div>
         <div className="header-buttons">
-          <button 
+          <button
             className="refresh-button"
             onClick={() => window.location.reload()}
           >
@@ -3041,7 +3050,7 @@ const VendorOrdersPage = () => {
             <div className="stat-label">Total Orders</div>
           </div>
         </div>
-        
+
         <div className="stat-card urgent">
           <div className="stat-icon">
             <AlertTriangle size={24} />
@@ -3051,7 +3060,7 @@ const VendorOrdersPage = () => {
             <div className="stat-label">Needs Confirmation</div>
           </div>
         </div>
-        
+
         <div className="stat-card processing">
           <div className="stat-icon">
             <RefreshCw size={24} />
@@ -3071,7 +3080,7 @@ const VendorOrdersPage = () => {
             <div className="stat-label">Out for Delivery</div>
           </div>
         </div>
-        
+
         <div className="stat-card completed">
           <div className="stat-icon">
             <TrendingUp size={24} />
@@ -3094,10 +3103,10 @@ const VendorOrdersPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="filter-controls">
-          <select 
-            value={statusFilter} 
+          <select
+            value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">All Status</option>
@@ -3109,9 +3118,9 @@ const VendorOrdersPage = () => {
             <option value="out_for_delivery">Out for Delivery</option>
             <option value="delivered">Delivered</option>
           </select>
-          
-          <select 
-            value={dateFilter} 
+
+          <select
+            value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
           >
             <option value="all">All Time</option>
@@ -3129,8 +3138,8 @@ const VendorOrdersPage = () => {
             <Package size={48} />
             <h3>No Orders Found</h3>
             <p>
-              {statusFilter === 'all' 
-                ? "No orders found for your shop." 
+              {statusFilter === 'all'
+                ? "No orders found for your shop."
                 : `No orders found with status: ${getStatusText(statusFilter)}`
               }
             </p>

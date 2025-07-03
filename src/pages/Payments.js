@@ -1,35 +1,24 @@
 
 
-
-
 // import React, { useState, useEffect } from 'react';
 // import { ref, onValue, update, get } from 'firebase/database';
 // import { onAuthStateChanged } from 'firebase/auth';
 // import { db, auth } from '../services/firebase';
 // import {
-//     CreditCard,
-//     DollarSign,
+//     Calendar,
 //     TrendingUp,
-//     TrendingDown,
 //     Clock,
 //     CheckCircle,
 //     XCircle,
 //     RefreshCw,
 //     User,
-//     Calendar,
 //     Eye,
-//     Filter,
 //     Search,
 //     Download,
 //     ArrowUpDown,
 //     ArrowUp,
 //     ArrowDown,
-//     Smartphone,
-//     Banknote,
-//     Wallet,
-//     AlertCircle,
-//     FileText,
-//     MoreHorizontal
+//     FileText
 // } from 'lucide-react';
 // import './VendorPaymentsPage.css';
 
@@ -42,10 +31,9 @@
 //     const [loading, setLoading] = useState(true);
 //     const [error, setError] = useState('');
 //     const [selectedPayment, setSelectedPayment] = useState(null);
+//     const [vendorPrices, setVendorPrices] = useState({});
 
 //     // Filter and sort states
-//     const [statusFilter, setStatusFilter] = useState('all');
-//     const [methodFilter, setMethodFilter] = useState('all');
 //     const [searchTerm, setSearchTerm] = useState('');
 //     const [dateFilter, setDateFilter] = useState('all');
 //     const [sortBy, setSortBy] = useState('date');
@@ -53,14 +41,9 @@
 
 //     // Statistics
 //     const [paymentStats, setPaymentStats] = useState({
-//         totalRevenue: 0,
-//         pendingAmount: 0,
-//         paidAmount: 0,
-//         refundedAmount: 0,
+//         totalVendorAmount: 0,
 //         totalTransactions: 0,
-//         avgTransactionValue: 0,
-//         commissionPaid: 0,
-//         netEarnings: 0
+//         avgTransactionValue: 0
 //     });
 
 //     // Get current vendor information
@@ -85,6 +68,11 @@
 //                         if (matchingShop) {
 //                             const [shopId, shopData] = matchingShop;
 //                             setVendorShop({ id: shopId, ...shopData });
+                            
+//                             // Get vendor prices if available
+//                             if (shopData.vendorPrices) {
+//                                 setVendorPrices(shopData.vendorPrices);
+//                             }
 //                         } else {
 //                             setError(`No shop found for email: ${user.email}`);
 //                         }
@@ -103,158 +91,129 @@
 //         return () => unsubscribeAuth();
 //     }, []);
 
+//     // Helper function to get vendor price for an item
+//     const getVendorPrice = (itemId, orderAmount) => {
+//         // First check if there's a custom vendor price
+//         const customVendorPrice = vendorPrices[itemId]?.price;
+//         if (customVendorPrice !== undefined) return customVendorPrice;
+        
+//         // If no custom price, calculate 90% of order amount (removing the 10% commission)
+//         return Math.round(orderAmount * 0.90);
+//     };
+
 //     // Fetch orders and convert delivered orders to payment records
 //     useEffect(() => {
 //         if (!vendorShop) return;
 
 //         setLoading(true);
 //         const ordersRef = ref(db, 'orders');
+//         const itemsRef = ref(db, 'items');
 
-//         const unsubscribe = onValue(ordersRef, (snapshot) => {
-//             try {
-//                 if (!snapshot.exists()) {
-//                     setPayments([]);
+//         // First get all items to have their data available
+//         get(itemsRef).then((itemsSnapshot) => {
+//             const itemsData = itemsSnapshot.exists() ? itemsSnapshot.val() : {};
+            
+//             const unsubscribe = onValue(ordersRef, (snapshot) => {
+//                 try {
+//                     if (!snapshot.exists()) {
+//                         setPayments([]);
+//                         setLoading(false);
+//                         return;
+//                     }
+
+//                     const data = snapshot.val();
+//                     const ordersArray = Object.keys(data).map(key => ({
+//                         id: key,
+//                         ...data[key]
+//                     }));
+
+//                     // Filter orders for this vendor
+//                     const vendorOrders = ordersArray.filter(order => {
+//                         if (!order) return false;
+
+//                         // Check if order is assigned to this vendor
+//                         if (order.vendor) {
+//                             const match =
+//                                 order.vendor.id === vendorShop.id ||
+//                                 (order.vendor.name && vendorShop.name &&
+//                                     order.vendor.name.toLowerCase() === vendorShop.name.toLowerCase()) ||
+//                                 (order.vendor.email && vendorShop.email &&
+//                                     order.vendor.email.toLowerCase() === vendorShop.email.toLowerCase()) ||
+//                                 (order.vendor.name && vendorShop.name &&
+//                                     order.vendor.name.toLowerCase().includes(vendorShop.name.toLowerCase()));
+
+//                             if (match) return true;
+//                         }
+
+//                         // Check assigned vendor
+//                         if (order.assignedVendor) {
+//                             const match =
+//                                 order.assignedVendor.id === vendorShop.id ||
+//                                 (order.assignedVendor.name && vendorShop.name &&
+//                                     order.assignedVendor.name.toLowerCase() === vendorShop.name.toLowerCase());
+
+//                             if (match) return true;
+//                         }
+
+//                         return false;
+//                     });
+
+//                     // Convert delivered orders to payment records
+//                     const paymentRecords = vendorOrders.map(order => {
+//                         const amount = order.totalAmount || 0;
+//                         const itemId = order.items && order.items.length > 0 ? order.items[0].id : null;
+//                         const vendorAmount = getVendorPrice(itemId, amount);
+
+//                         return {
+//                             id: `pay_${order.id}`,
+//                             orderId: order.id,
+//                             transactionId: `txn_${order.id.slice(-8)}`,
+//                             amount: amount,
+//                             vendorAmount: vendorAmount,
+//                             transactionDate: order.orderDate,
+//                             customer: order.customer,
+//                             reference: order.paymentReference || '- will update later',
+//                             vendor: order.vendor || vendorShop
+//                         };
+//                     });
+
+//                     // Sort by date (newest first)
+//                     paymentRecords.sort((a, b) => new Date(b.transactionDate) - new Date(a.transactionDate));
+
+//                     setPayments(paymentRecords);
+//                     calculateStats(paymentRecords);
 //                     setLoading(false);
-//                     return;
+
+//                 } catch (err) {
+//                     console.error('Error processing payments:', err);
+//                     setError('Failed to load payment data.');
+//                     setLoading(false);
 //                 }
+//             });
 
-//                 const data = snapshot.val();
-//                 const ordersArray = Object.keys(data).map(key => ({
-//                     id: key,
-//                     ...data[key]
-//                 }));
-
-//                 // Filter orders for this vendor (same logic as orders page)
-//                 const vendorOrders = ordersArray.filter(order => {
-//                     if (!order) return false;
-
-//                     // Check if order is assigned to this vendor (multiple matching strategies)
-//                     if (order.vendor) {
-//                         const match =
-//                             order.vendor.id === vendorShop.id ||
-//                             (order.vendor.name && vendorShop.name &&
-//                                 order.vendor.name.toLowerCase() === vendorShop.name.toLowerCase()) ||
-//                             (order.vendor.email && vendorShop.email &&
-//                                 order.vendor.email.toLowerCase() === vendorShop.email.toLowerCase()) ||
-//                             (order.vendor.name && vendorShop.name &&
-//                                 order.vendor.name.toLowerCase().includes(vendorShop.name.toLowerCase()));
-
-//                         if (match) return true;
-//                     }
-
-//                     // Check assigned vendor
-//                     if (order.assignedVendor) {
-//                         const match =
-//                             order.assignedVendor.id === vendorShop.id ||
-//                             (order.assignedVendor.name && vendorShop.name &&
-//                                 order.assignedVendor.name.toLowerCase() === vendorShop.name.toLowerCase());
-
-//                         if (match) return true;
-//                     }
-
-//                     return false;
-//                 });
-
-//                 // Convert delivered orders to payment records
-//                 const paymentRecords = vendorOrders.map(order => {
-//                     const amount = order.totalAmount || 0;
-//                     const commission = Math.round(amount * 0.10); // 10% commission
-//                     const paymentStatus = getPaymentStatus(order.status);
-
-//                     return {
-//                         id: `pay_${order.id}`,
-//                         orderId: order.id,
-//                         transactionId: `txn_${order.id.slice(-8)}`,
-//                         amount: amount,
-//                         commission: commission,
-//                         paymentMethod: order.paymentMethod || 'cash',
-//                         status: paymentStatus,
-//                         transactionDate: order.orderDate,
-//                         customer: order.customer,
-//                         gateway: order.paymentMethod === 'card' ? 'Razorpay' :
-//                             order.paymentMethod === 'upi' ? 'UPI Gateway' :
-//                                 order.paymentMethod === 'wallet' ? 'Paytm' : 'Cash',
-//                         reference: order.paymentReference || '- will update later',
-//                         vendor: order.vendor || vendorShop
-//                     };
-//                 });
-
-//                 // Sort by date (newest first)
-//                 paymentRecords.sort((a, b) => new Date(b.transactionDate) - new Date(a.transactionDate));
-
-//                 setPayments(paymentRecords);
-//                 calculateStats(paymentRecords);
-//                 setLoading(false);
-
-//             } catch (err) {
-//                 console.error('Error processing payments:', err);
-//                 setError('Failed to load payment data.');
-//                 setLoading(false);
-//             }
+//             return () => unsubscribe();
+//         }).catch(err => {
+//             console.error('Error fetching items:', err);
+//             setError('Failed to load item data.');
+//             setLoading(false);
 //         });
-
-//         return () => unsubscribe();
-//     }, [vendorShop]);
-
-//     // Helper function to determine payment status from order status
-//     const getPaymentStatus = (orderStatus) => {
-//         switch (orderStatus) {
-//             case 'delivered':
-//                 return 'completed';
-//             case 'processing':
-//             case 'prepared':
-//             case 'ready_for_pickup':
-//             case 'out_for_delivery':
-//                 return 'pending';
-//             case 'cancelled':
-//                 return 'refunded';
-//             case 'pending_confirmation':
-//             case 'pending':
-//                 return 'pending';
-//             default:
-//                 return 'pending';
-//         }
-//     };
+//     }, [vendorShop, vendorPrices]);
 
 //     // Calculate payment statistics
 //     const calculateStats = (paymentsList) => {
 //         const stats = {
-//             totalRevenue: 0,
-//             pendingAmount: 0,
-//             paidAmount: 0,
-//             refundedAmount: 0,
+//             totalVendorAmount: 0,
 //             totalTransactions: paymentsList.length,
-//             avgTransactionValue: 0,
-//             commissionPaid: 0,
-//             netEarnings: 0
+//             avgTransactionValue: 0
 //         };
 
 //         paymentsList.forEach(payment => {
-//             const amount = payment.amount || 0;
-//             const commission = payment.commission || 0;
-
-//             stats.totalRevenue += amount;
-//             stats.commissionPaid += commission;
-
-//             switch (payment.status) {
-//                 case 'pending':
-//                 case 'processing':
-//                     stats.pendingAmount += amount;
-//                     break;
-//                 case 'completed':
-//                 case 'paid':
-//                     stats.paidAmount += amount;
-//                     break;
-//                 case 'refunded':
-//                     stats.refundedAmount += amount;
-//                     break;
-//             }
+//             stats.totalVendorAmount += payment.vendorAmount || 0;
 //         });
 
 //         stats.avgTransactionValue = stats.totalTransactions > 0
-//             ? stats.totalRevenue / stats.totalTransactions
+//             ? stats.totalVendorAmount / stats.totalTransactions
 //             : 0;
-//         stats.netEarnings = stats.paidAmount - stats.commissionPaid;
 
 //         setPaymentStats(stats);
 //     };
@@ -276,8 +235,8 @@
 
 //             switch (sortBy) {
 //                 case 'amount':
-//                     aValue = a.amount || 0;
-//                     bValue = b.amount || 0;
+//                     aValue = a.vendorAmount || 0;
+//                     bValue = b.vendorAmount || 0;
 //                     break;
 //                 case 'date':
 //                     aValue = new Date(a.transactionDate);
@@ -286,10 +245,6 @@
 //                 case 'customer':
 //                     aValue = a.customer?.fullName || '';
 //                     bValue = b.customer?.fullName || '';
-//                     break;
-//                 case 'status':
-//                     aValue = a.status || '';
-//                     bValue = b.status || '';
 //                     break;
 //                 default:
 //                     aValue = a.transactionDate;
@@ -307,16 +262,6 @@
 //     // Filter payments
 //     useEffect(() => {
 //         let filtered = [...payments];
-
-//         // Status filter
-//         if (statusFilter !== 'all') {
-//             filtered = filtered.filter(payment => payment.status === statusFilter);
-//         }
-
-//         // Method filter
-//         if (methodFilter !== 'all') {
-//             filtered = filtered.filter(payment => payment.paymentMethod === methodFilter);
-//         }
 
 //         // Search filter
 //         if (searchTerm) {
@@ -361,7 +306,7 @@
 //         // Apply sorting
 //         const sorted = sortPayments(filtered);
 //         setFilteredPayments(sorted);
-//     }, [payments, statusFilter, methodFilter, searchTerm, dateFilter, sortBy, sortOrder]);
+//     }, [payments, searchTerm, dateFilter, sortBy, sortOrder]);
 
 //     // Export payments to CSV
 //     const exportPayments = () => {
@@ -372,13 +317,7 @@
 //             'Customer Name': payment.customer?.fullName || '- will update later',
 //             'Customer Phone': payment.customer?.phone || '- will update later',
 //             'Date': formatDate(payment.transactionDate),
-//             'Amount': payment.amount || 0,
-//             'Payment Method': getPaymentMethodText(payment.paymentMethod),
-//             'Status': getStatusText(payment.status),
-//             'Commission': payment.commission || 0,
-//             'Net Amount': (payment.amount || 0) - (payment.commission || 0),
-//             'Gateway': payment.gateway || '- will update later',
-//             'Reference': payment.reference || '- will update later'
+//             'Vendor Amount': formatCurrency(payment.vendorAmount || 0)
 //         }));
 
 //         if (csvData.length === 0) {
@@ -419,54 +358,6 @@
 //             hour: '2-digit',
 //             minute: '2-digit'
 //         });
-//     };
-
-//     // Get status icon
-//     const getStatusIcon = (status) => {
-//         switch (status) {
-//             case 'pending': return <Clock className="status-icon pending" />;
-//             case 'processing': return <RefreshCw className="status-icon processing" />;
-//             case 'completed':
-//             case 'paid': return <CheckCircle className="status-icon completed" />;
-//             case 'failed': return <XCircle className="status-icon failed" />;
-//             case 'refunded': return <TrendingDown className="status-icon refunded" />;
-//             default: return <AlertCircle className="status-icon" />;
-//         }
-//     };
-
-//     // Get status text
-//     const getStatusText = (status) => {
-//         switch (status) {
-//             case 'pending': return 'Pending';
-//             case 'processing': return 'Processing';
-//             case 'completed': return 'Completed';
-//             case 'paid': return 'Paid';
-//             case 'failed': return 'Failed';
-//             case 'refunded': return 'Refunded';
-//             default: return status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
-//         }
-//     };
-
-//     // Get payment method icon
-//     const getPaymentMethodIcon = (method) => {
-//         switch (method) {
-//             case 'card': return <CreditCard size={16} />;
-//             case 'upi': return <Smartphone size={16} />;
-//             case 'wallet': return <Wallet size={16} />;
-//             case 'cash': return <Banknote size={16} />;
-//             default: return <DollarSign size={16} />;
-//         }
-//     };
-
-//     // Get payment method text
-//     const getPaymentMethodText = (method) => {
-//         switch (method) {
-//             case 'card': return 'Credit/Debit Card';
-//             case 'upi': return 'UPI';
-//             case 'wallet': return 'Digital Wallet';
-//             case 'cash': return 'Cash on Delivery';
-//             default: return method?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown';
-//         }
 //     };
 
 //     // Get sort icon
@@ -525,10 +416,6 @@
 //                         ← Back to Payments
 //                     </button>
 //                     <h1>Payment Details</h1>
-//                     <div className="payment-status-badge">
-//                         {getStatusIcon(payment.status)}
-//                         <span>{getStatusText(payment.status)}</span>
-//                     </div>
 //                 </div>
 
 //                 <div className="payment-detail-container">
@@ -540,32 +427,17 @@
 //                                 <p><strong>Payment ID:</strong> {payment.id}</p>
 //                                 <p><strong>Transaction ID:</strong> {payment.transactionId || '- will update later'}</p>
 //                                 <p><strong>Order ID:</strong> {payment.orderId || '- will update later'}</p>
-//                                 <p><strong>Gateway:</strong> {payment.gateway || '- will update later'}</p>
-//                                 <p><strong>Reference:</strong> {payment.reference || '- will update later'}</p>
 //                                 <p><strong>Date:</strong> {formatDate(payment.transactionDate)}</p>
 //                             </div>
 //                         </div>
 
-//                         {/* Amount Breakdown */}
+//                         {/* Amount */}
 //                         <div className="detail-card">
-//                             <h3>Amount Breakdown</h3>
+//                             <h3>Amount</h3>
 //                             <div className="detail-content">
 //                                 <div className="amount-row">
-//                                     <span>Order Amount:</span>
-//                                     <span className="amount">{formatCurrency(payment.amount)}</span>
-//                                 </div>
-//                                 <div className="amount-row">
-//                                     <span>Platform Commission (Profit):</span>
-//                                     <span className="profit" style={{ color: '#16a34a', fontWeight: 'bold' }}>
-//                                         +{formatCurrency(payment.commission || 0)}
-//                                     </span>
-//                                 </div>
-//                                 <hr />
-//                                 <div className="amount-row total">
-//                                     <span><strong>Net Amount:</strong></span>
-//                                     <span className="net-amount">
-//                                         <strong>{formatCurrency((payment.amount || 0) - (payment.commission || 0))}</strong>
-//                                     </span>
+//                                     <span>Vendor Amount:</span>
+//                                     <span className="amount">{formatCurrency(payment.vendorAmount)}</span>
 //                                 </div>
 //                             </div>
 //                         </div>
@@ -575,8 +447,7 @@
 //                             <h3>Customer Information</h3>
 //                             <div className="detail-content">
 //                                 <p><User size={16} /> <strong>{payment.customer?.fullName || '- will update later'}</strong></p>
-//                                 <p><CreditCard size={16} /> {payment.customer?.phone || '- will update later'}</p>
-//                                 <p>{getPaymentMethodIcon(payment.paymentMethod)} {getPaymentMethodText(payment.paymentMethod)}</p>
+                             
 //                             </div>
 //                         </div>
 //                     </div>
@@ -591,7 +462,7 @@
 //             <div className="page-header">
 //                 <div className="header-content">
 //                     <h1>Payment Management</h1>
-//                     <p>Track earnings and transactions for <strong>{vendorShop?.name || 'Your Restaurant'}</strong></p>
+//                     <p>Track earnings for <strong>{vendorShop?.name || 'Your Restaurant'}</strong></p>
 //                 </div>
 //                 <div className="header-buttons">
 //                     <button className="export-button" onClick={exportPayments}>
@@ -608,38 +479,8 @@
 //                         <TrendingUp size={24} />
 //                     </div>
 //                     <div className="stat-content">
-//                         <div className="stat-value">{formatCurrency(paymentStats.totalRevenue)}</div>
-//                         <div className="stat-label">Total Revenue</div>
-//                     </div>
-//                 </div>
-
-//                 <div className="stat-card pending">
-//                     <div className="stat-icon">
-//                         <Clock size={24} />
-//                     </div>
-//                     <div className="stat-content">
-//                         <div className="stat-value">{formatCurrency(paymentStats.pendingAmount)}</div>
-//                         <div className="stat-label">Pending Payments</div>
-//                     </div>
-//                 </div>
-
-//                 <div className="stat-card completed">
-//                     <div className="stat-icon">
-//                         <CheckCircle size={24} />
-//                     </div>
-//                     <div className="stat-content">
-//                         <div className="stat-value">{formatCurrency(paymentStats.paidAmount)}</div>
-//                         <div className="stat-label">Completed Payments</div>
-//                     </div>
-//                 </div>
-
-//                 <div className="stat-card net">
-//                     <div className="stat-icon">
-//                         <span className="stat-icon1">₹</span>
-//                     </div>
-//                     <div className="stat-content">
-//                         <div className="stat-value">{formatCurrency(paymentStats.netEarnings)}</div>
-//                         <div className="stat-label">Net Earnings</div>
+//                         <div className="stat-value">{formatCurrency(paymentStats.totalVendorAmount)}</div>
+//                         <div className="stat-label">Total Vendor Earnings</div>
 //                     </div>
 //                 </div>
 //             </div>
@@ -658,29 +499,6 @@
 
 //                 <div className="filter-controls">
 //                     <select
-//                         value={statusFilter}
-//                         onChange={(e) => setStatusFilter(e.target.value)}
-//                     >
-//                         <option value="all">All Status</option>
-//                         <option value="pending">Pending</option>
-//                         <option value="processing">Processing</option>
-//                         <option value="completed">Completed</option>
-//                         <option value="failed">Failed</option>
-//                         <option value="refunded">Refunded</option>
-//                     </select>
-
-//                     <select
-//                         value={methodFilter}
-//                         onChange={(e) => setMethodFilter(e.target.value)}
-//                     >
-//                         <option value="all">All Methods</option>
-//                         <option value="card">Credit/Debit Card</option>
-//                         <option value="upi">UPI</option>
-//                         <option value="wallet">Digital Wallet</option>
-//                         <option value="cash">Cash on Delivery</option>
-//                     </select>
-
-//                     <select
 //                         value={dateFilter}
 //                         onChange={(e) => setDateFilter(e.target.value)}
 //                     >
@@ -697,13 +515,10 @@
 //             <div className="payments-section">
 //                 {filteredPayments.length === 0 ? (
 //                     <div className="empty-state">
-//                         <CreditCard size={48} />
+//                         <FileText size={48} />
 //                         <h3>No Payments Found</h3>
 //                         <p>
-//                             {statusFilter === 'all'
-//                                 ? "Payment records are automatically generated from your delivered orders."
-//                                 : `No payments found with status: ${getStatusText(statusFilter)}`
-//                             }
+//                             Payment records are automatically generated from your delivered orders.
 //                         </p>
 //                         {vendorShop && (
 //                             <div style={{ marginTop: '16px', fontSize: '14px', color: '#6b7280' }}>
@@ -723,21 +538,15 @@
 //                                     <th onClick={() => handleSort('customer')}>
 //                                         Customer {getSortIcon('customer')}
 //                                     </th>
-//                                     <th>Payment Method</th>
 //                                     <th onClick={() => handleSort('amount')}>
-//                                         Amount {getSortIcon('amount')}
-//                                     </th>
-//                                     <th>Commission</th>
-//                                     <th>Net Amount</th>
-//                                     <th onClick={() => handleSort('status')}>
-//                                         Status {getSortIcon('status')}
+//                                         Vendor Amount {getSortIcon('amount')}
 //                                     </th>
 //                                     <th>Actions</th>
 //                                 </tr>
 //                             </thead>
 //                             <tbody>
 //                                 {filteredPayments.map(payment => (
-//                                     <tr key={payment.id} className={`payment-row ${payment.status}`}>
+//                                     <tr key={payment.id} className="payment-row">
 //                                         <td>
 //                                             <div className="date-cell">
 //                                                 <Calendar size={14} />
@@ -753,28 +562,8 @@
 //                                                 </div>
 //                                             </div>
 //                                         </td>
-//                                         <td>
-//                                             <div className="method-cell">
-//                                                 <div>
-//                                                     <Banknote size={16} />
-//                                                 </div>
-//                                                 <span>{getPaymentMethodText(payment.paymentMethod)}</span>
-//                                             </div>
-//                                         </td>
 //                                         <td className="amount-cell">
-//                                             {formatCurrency(payment.amount)}
-//                                         </td>
-//                                         <td className="commission-cell" style={{ color: '#16a34a', fontWeight: 'bold' }}>
-//                                             +{formatCurrency(payment.commission || 0)}
-//                                         </td>
-//                                         <td className="net-amount-cell">
-//                                             <strong>{formatCurrency((payment.amount || 0) - (payment.commission || 0))}</strong>
-//                                         </td>
-//                                         <td>
-//                                             <div className="status-cell">
-//                                                 {getStatusIcon(payment.status)}
-//                                                 <span>{getStatusText(payment.status)}</span>
-//                                             </div>
+//                                             {formatCurrency(payment.vendorAmount)}
 //                                         </td>
 //                                         <td>
 //                                             <div className="actions-cell">
@@ -801,11 +590,6 @@
 // export default VendorPaymentsPage;
 
 
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { ref, onValue, update, get } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -824,7 +608,9 @@ import {
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    FileText
+    FileText,
+    AlertTriangle,
+    Shield
 } from 'lucide-react';
 import './VendorPaymentsPage.css';
 
@@ -844,12 +630,15 @@ const VendorPaymentsPage = () => {
     const [dateFilter, setDateFilter] = useState('all');
     const [sortBy, setSortBy] = useState('date');
     const [sortOrder, setSortOrder] = useState('desc');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     // Statistics
     const [paymentStats, setPaymentStats] = useState({
         totalVendorAmount: 0,
         totalTransactions: 0,
-        avgTransactionValue: 0
+        avgTransactionValue: 0,
+        pendingAmount: 0,
+        completedAmount: 0
     });
 
     // Get current vendor information
@@ -897,124 +686,110 @@ const VendorPaymentsPage = () => {
         return () => unsubscribeAuth();
     }, []);
 
-    // Helper function to get vendor price for an item
-    const getVendorPrice = (itemId, orderAmount) => {
-        // First check if there's a custom vendor price
-        const customVendorPrice = vendorPrices[itemId]?.price;
-        if (customVendorPrice !== undefined) return customVendorPrice;
-        
-        // If no custom price, calculate 90% of order amount (removing the 10% commission)
-        return Math.round(orderAmount * 0.90);
-    };
-
-    // Fetch orders and convert delivered orders to payment records
+    // Fetch real payment data from Firebase
     useEffect(() => {
         if (!vendorShop) return;
 
         setLoading(true);
-        const ordersRef = ref(db, 'orders');
-        const itemsRef = ref(db, 'items');
-
-        // First get all items to have their data available
-        get(itemsRef).then((itemsSnapshot) => {
-            const itemsData = itemsSnapshot.exists() ? itemsSnapshot.val() : {};
-            
-            const unsubscribe = onValue(ordersRef, (snapshot) => {
-                try {
-                    if (!snapshot.exists()) {
-                        setPayments([]);
-                        setLoading(false);
-                        return;
-                    }
-
-                    const data = snapshot.val();
-                    const ordersArray = Object.keys(data).map(key => ({
-                        id: key,
-                        ...data[key]
-                    }));
-
-                    // Filter orders for this vendor
-                    const vendorOrders = ordersArray.filter(order => {
-                        if (!order) return false;
-
-                        // Check if order is assigned to this vendor
-                        if (order.vendor) {
-                            const match =
-                                order.vendor.id === vendorShop.id ||
-                                (order.vendor.name && vendorShop.name &&
-                                    order.vendor.name.toLowerCase() === vendorShop.name.toLowerCase()) ||
-                                (order.vendor.email && vendorShop.email &&
-                                    order.vendor.email.toLowerCase() === vendorShop.email.toLowerCase()) ||
-                                (order.vendor.name && vendorShop.name &&
-                                    order.vendor.name.toLowerCase().includes(vendorShop.name.toLowerCase()));
-
-                            if (match) return true;
-                        }
-
-                        // Check assigned vendor
-                        if (order.assignedVendor) {
-                            const match =
-                                order.assignedVendor.id === vendorShop.id ||
-                                (order.assignedVendor.name && vendorShop.name &&
-                                    order.assignedVendor.name.toLowerCase() === vendorShop.name.toLowerCase());
-
-                            if (match) return true;
-                        }
-
-                        return false;
-                    });
-
-                    // Convert delivered orders to payment records
-                    const paymentRecords = vendorOrders.map(order => {
-                        const amount = order.totalAmount || 0;
-                        const itemId = order.items && order.items.length > 0 ? order.items[0].id : null;
-                        const vendorAmount = getVendorPrice(itemId, amount);
-
-                        return {
-                            id: `pay_${order.id}`,
-                            orderId: order.id,
-                            transactionId: `txn_${order.id.slice(-8)}`,
-                            amount: amount,
-                            vendorAmount: vendorAmount,
-                            transactionDate: order.orderDate,
-                            customer: order.customer,
-                            reference: order.paymentReference || '- will update later',
-                            vendor: order.vendor || vendorShop
-                        };
-                    });
-
-                    // Sort by date (newest first)
-                    paymentRecords.sort((a, b) => new Date(b.transactionDate) - new Date(a.transactionDate));
-
-                    setPayments(paymentRecords);
-                    calculateStats(paymentRecords);
+        
+        // Reference to the payments collection in Firebase
+        const paymentsRef = ref(db, 'payments');
+        
+        const unsubscribe = onValue(paymentsRef, (snapshot) => {
+            try {
+                if (!snapshot.exists()) {
+                    setPayments([]);
                     setLoading(false);
-
-                } catch (err) {
-                    console.error('Error processing payments:', err);
-                    setError('Failed to load payment data.');
-                    setLoading(false);
+                    return;
                 }
-            });
 
-            return () => unsubscribe();
-        }).catch(err => {
-            console.error('Error fetching items:', err);
-            setError('Failed to load item data.');
-            setLoading(false);
+                const data = snapshot.val();
+                const paymentsArray = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+
+                // Filter payments for this vendor only
+                const vendorPayments = paymentsArray.filter(payment => 
+                    payment.vendorId === vendorShop.id ||
+                    (payment.vendorName && vendorShop.name && 
+                     payment.vendorName.toLowerCase() === vendorShop.name.toLowerCase())
+                );
+
+                // Sort by date (newest first)
+                vendorPayments.sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp));
+
+                setPayments(vendorPayments);
+                calculateStats(vendorPayments);
+                setLoading(false);
+
+            } catch (err) {
+                console.error('Error processing payments:', err);
+                setError('Failed to load payment data.');
+                setLoading(false);
+            }
         });
-    }, [vendorShop, vendorPrices]);
+
+        return () => unsubscribe();
+    }, [vendorShop]);
+
+    // Also fetch itemPayments for quick status lookup
+    useEffect(() => {
+        if (!vendorShop) return;
+        
+        const itemPaymentsRef = ref(db, 'itemPayments');
+        
+        const unsubscribe = onValue(itemPaymentsRef, (snapshot) => {
+            if (!snapshot.exists()) return;
+            
+            try {
+                const data = snapshot.val();
+                
+                // Update any matching payments with status from itemPayments
+                setPayments(prevPayments => {
+                    const updatedPayments = [...prevPayments];
+                    
+                    updatedPayments.forEach(payment => {
+                        if (payment.itemId && data[payment.itemId]) {
+                            payment.status = data[payment.itemId].status || payment.status;
+                            payment.lastStatusCheck = data[payment.itemId].lastChecked;
+                        }
+                    });
+                    
+                    return updatedPayments;
+                });
+                
+                // Recalculate stats with updated statuses
+                calculateStats(payments);
+                
+            } catch (err) {
+                console.error('Error processing item payments:', err);
+            }
+        });
+        
+        return () => unsubscribe();
+    }, [vendorShop, payments.length]);
 
     // Calculate payment statistics
     const calculateStats = (paymentsList) => {
         const stats = {
             totalVendorAmount: 0,
             totalTransactions: paymentsList.length,
-            avgTransactionValue: 0
+            avgTransactionValue: 0,
+            pendingAmount: 0,
+            completedAmount: 0
         };
 
         paymentsList.forEach(payment => {
-            stats.totalVendorAmount += payment.vendorAmount || 0;
+            const amount = payment.amount || 0;
+            stats.totalVendorAmount += amount;
+            
+            // Track amounts by status
+            if (payment.status === 'completed') {
+                stats.completedAmount += amount;
+            } else if (payment.status === 'initiated' || payment.status === 'processing') {
+                stats.pendingAmount += amount;
+            }
         });
 
         stats.avgTransactionValue = stats.totalTransactions > 0
@@ -1041,20 +816,24 @@ const VendorPaymentsPage = () => {
 
             switch (sortBy) {
                 case 'amount':
-                    aValue = a.vendorAmount || 0;
-                    bValue = b.vendorAmount || 0;
+                    aValue = a.amount || 0;
+                    bValue = b.amount || 0;
                     break;
                 case 'date':
-                    aValue = new Date(a.transactionDate);
-                    bValue = new Date(b.transactionDate);
+                    aValue = new Date(a.createdAt || a.timestamp);
+                    bValue = new Date(b.createdAt || b.timestamp);
                     break;
-                case 'customer':
-                    aValue = a.customer?.fullName || '';
-                    bValue = b.customer?.fullName || '';
+                case 'status':
+                    aValue = a.status || '';
+                    bValue = b.status || '';
+                    break;
+                case 'item':
+                    aValue = a.itemName || '';
+                    bValue = b.itemName || '';
                     break;
                 default:
-                    aValue = a.transactionDate;
-                    bValue = b.transactionDate;
+                    aValue = new Date(a.createdAt || a.timestamp);
+                    bValue = new Date(b.createdAt || b.timestamp);
             }
 
             if (sortOrder === 'asc') {
@@ -1072,12 +851,16 @@ const VendorPaymentsPage = () => {
         // Search filter
         if (searchTerm) {
             filtered = filtered.filter(payment =>
-                payment.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                payment.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                payment.transactionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                payment.customer?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                payment.customer?.phone?.includes(searchTerm)
+                payment.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                payment.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                payment.merchant_ref_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                payment.payout_id?.toLowerCase().includes(searchTerm.toLowerCase())
             );
+        }
+
+        // Status filter
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(payment => payment.status === statusFilter);
         }
 
         // Date filter
@@ -1086,7 +869,7 @@ const VendorPaymentsPage = () => {
             const today = new Date(now.setHours(0, 0, 0, 0));
 
             filtered = filtered.filter(payment => {
-                const paymentDate = new Date(payment.transactionDate);
+                const paymentDate = new Date(payment.createdAt || payment.timestamp);
 
                 switch (dateFilter) {
                     case 'today':
@@ -1112,18 +895,85 @@ const VendorPaymentsPage = () => {
         // Apply sorting
         const sorted = sortPayments(filtered);
         setFilteredPayments(sorted);
-    }, [payments, searchTerm, dateFilter, sortBy, sortOrder]);
+    }, [payments, searchTerm, dateFilter, sortBy, sortOrder, statusFilter]);
+
+    // Check payment status from API
+    const checkPaymentStatus = async (payment) => {
+        if (!payment.merchant_ref_id) {
+            return { success: false, message: 'No reference ID available' };
+        }
+        
+        try {
+            // Set loading state for this payment
+            setPayments(prevPayments => 
+                prevPayments.map(p => 
+                    p.id === payment.id ? { ...p, checkingStatus: true } : p
+                )
+            );
+            
+            // Call the status check API
+            const response = await fetch(`http://localhost:5000/api/vendor-transfer-status/${payment.merchant_ref_id}`);
+            const result = await response.json();
+            
+            if (result.status === 1) {
+                // Update payment status in Firebase
+                if (payment.itemId) {
+                    const itemPaymentRef = ref(db, `itemPayments/${payment.itemId}`);
+                    await update(itemPaymentRef, {
+                        status: result.data.payout_status,
+                        lastChecked: new Date().toISOString()
+                    });
+                }
+                
+                // Update local state
+                setPayments(prevPayments => 
+                    prevPayments.map(p => 
+                        p.id === payment.id ? 
+                        { 
+                            ...p, 
+                            status: result.data.payout_status,
+                            lastStatusCheck: new Date().toISOString(),
+                            checkingStatus: false
+                        } : p
+                    )
+                );
+                
+                return { 
+                    success: true, 
+                    status: result.data.payout_status,
+                    message: `Payment status: ${result.data.payout_status}`
+                };
+            } else {
+                throw new Error(result.msg || 'Failed to check status');
+            }
+            
+        } catch (error) {
+            console.error('Error checking payment status:', error);
+            
+            // Update local state to show error
+            setPayments(prevPayments => 
+                prevPayments.map(p => 
+                    p.id === payment.id ? { ...p, checkingStatus: false, statusError: true } : p
+                )
+            );
+            
+            return { success: false, message: error.message };
+            
+        }
+    };
 
     // Export payments to CSV
     const exportPayments = () => {
         const csvData = filteredPayments.map(payment => ({
-            'Payment ID': payment.id,
-            'Order ID': payment.orderId || '- will update later',
-            'Transaction ID': payment.transactionId || '- will update later',
-            'Customer Name': payment.customer?.fullName || '- will update later',
-            'Customer Phone': payment.customer?.phone || '- will update later',
-            'Date': formatDate(payment.transactionDate),
-            'Vendor Amount': formatCurrency(payment.vendorAmount || 0)
+            'Payment ID': payment.id || '',
+            'Reference ID': payment.merchant_ref_id || '',
+            'Payout ID': payment.payout_id || '',
+            'Item': payment.itemName || '',
+            'Quantity': payment.quantity || '',
+            'Date': formatDate(payment.createdAt || payment.timestamp),
+            'Amount': formatCurrency(payment.amount || 0),
+            'Status': payment.status || 'unknown',
+            'Last Updated': payment.lastStatusCheck ? formatDate(payment.lastStatusCheck) : 'N/A'
         }));
 
         if (csvData.length === 0) {
@@ -1172,6 +1022,22 @@ const VendorPaymentsPage = () => {
         return sortOrder === 'asc'
             ? <ArrowUp size={14} className="sort-icon active" />
             : <ArrowDown size={14} className="sort-icon active" />;
+    };
+
+    // Get status badge
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'completed':
+                return <span className="status-badge completed"><CheckCircle size={14} /> Completed</span>;
+            case 'initiated':
+                return <span className="status-badge initiated"><Clock size={14} /> Initiated</span>;
+            case 'processing':
+                return <span className="status-badge processing"><RefreshCw size={14} /> Processing</span>;
+            case 'failed':
+                return <span className="status-badge failed"><XCircle size={14} /> Failed</span>;
+            default:
+                return <span className="status-badge unknown"><AlertTriangle size={14} /> Unknown</span>;
+        }
     };
 
     if (loading) {
@@ -1231,9 +1097,25 @@ const VendorPaymentsPage = () => {
                             <h3>Transaction Information</h3>
                             <div className="detail-content">
                                 <p><strong>Payment ID:</strong> {payment.id}</p>
-                                <p><strong>Transaction ID:</strong> {payment.transactionId || '- will update later'}</p>
-                                <p><strong>Order ID:</strong> {payment.orderId || '- will update later'}</p>
-                                <p><strong>Date:</strong> {formatDate(payment.transactionDate)}</p>
+                                <p><strong>Reference ID:</strong> {payment.merchant_ref_id || 'N/A'}</p>
+                                <p><strong>Payout ID:</strong> {payment.payout_id || 'N/A'}</p>
+                                <p><strong>Date:</strong> {formatDate(payment.createdAt || payment.timestamp)}</p>
+                                <p><strong>Status:</strong> {getStatusBadge(payment.status)}</p>
+                                <p><strong>Last Status Check:</strong> {payment.lastStatusCheck ? formatDate(payment.lastStatusCheck) : 'Not checked yet'}</p>
+                                
+                                {payment.merchant_ref_id && (
+                                    <button 
+                                        className="check-status-button"
+                                        onClick={() => checkPaymentStatus(payment)}
+                                        disabled={payment.checkingStatus}
+                                    >
+                                        {payment.checkingStatus ? (
+                                            <><RefreshCw size={14} className="spinning" /> Checking Status...</>
+                                        ) : (
+                                            <><RefreshCw size={14} /> Check Latest Status</>
+                                        )}
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -1242,18 +1124,34 @@ const VendorPaymentsPage = () => {
                             <h3>Amount</h3>
                             <div className="detail-content">
                                 <div className="amount-row">
-                                    <span>Vendor Amount:</span>
-                                    <span className="amount">{formatCurrency(payment.vendorAmount)}</span>
+                                    <span>Total Amount:</span>
+                                    <span className="amount">{formatCurrency(payment.amount || 0)}</span>
                                 </div>
+                                {payment.quantity && (
+                                    <div className="amount-detail">
+                                        <span>Item Quantity:</span>
+                                        <span>{payment.quantity}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* Customer Information */}
+                        {/* Item Information */}
                         <div className="detail-card">
-                            <h3>Customer Information</h3>
+                            <h3>Item Information</h3>
                             <div className="detail-content">
-                                <p><User size={16} /> <strong>{payment.customer?.fullName || '- will update later'}</strong></p>
-                             
+                                <p><strong>Item Name:</strong> {payment.itemName || 'N/A'}</p>
+                                <p><strong>Payment Method:</strong> {payment.paymentMethod || 'N/A'}</p>
+                                {payment.paymentDetails && payment.paymentMethod === 'BANK' && (
+                                    <>
+                                        <p><strong>Account Holder:</strong> {payment.paymentDetails.accountHolderName || 'N/A'}</p>
+                                        <p><strong>Account Number:</strong> ******{payment.paymentDetails.accountNumber?.slice(-4) || 'N/A'}</p>
+                                        <p><strong>IFSC Code:</strong> {payment.paymentDetails.ifscCode || 'N/A'}</p>
+                                    </>
+                                )}
+                                {payment.paymentDetails && payment.paymentMethod === 'UPI' && (
+                                    <p><strong>UPI ID:</strong> {payment.paymentDetails.upiId || 'N/A'}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1289,6 +1187,26 @@ const VendorPaymentsPage = () => {
                         <div className="stat-label">Total Vendor Earnings</div>
                     </div>
                 </div>
+                
+                <div className="stat-card pending">
+                    <div className="stat-icon">
+                        <Clock size={24} />
+                    </div>
+                    <div className="stat-content">
+                        <div className="stat-value">{formatCurrency(paymentStats.pendingAmount)}</div>
+                        <div className="stat-label">Pending Payments</div>
+                    </div>
+                </div>
+                
+                <div className="stat-card completed">
+                    <div className="stat-icon">
+                        <CheckCircle size={24} />
+                    </div>
+                    <div className="stat-content">
+                        <div className="stat-value">{formatCurrency(paymentStats.completedAmount)}</div>
+                        <div className="stat-label">Completed Payments</div>
+                    </div>
+                </div>
             </div>
 
             {/* Filters */}
@@ -1297,7 +1215,7 @@ const VendorPaymentsPage = () => {
                     <Search size={16} />
                     <input
                         type="text"
-                        placeholder="Search by payment ID, order ID, transaction ID, or customer..."
+                        placeholder="Search by reference ID, item name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -1314,6 +1232,17 @@ const VendorPaymentsPage = () => {
                         <option value="week">This Week</option>
                         <option value="month">This Month</option>
                     </select>
+                    
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="all">All Statuses</option>
+                        <option value="initiated">Initiated</option>
+                        <option value="processing">Processing</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                    </select>
                 </div>
             </div>
 
@@ -1324,12 +1253,12 @@ const VendorPaymentsPage = () => {
                         <FileText size={48} />
                         <h3>No Payments Found</h3>
                         <p>
-                            Payment records are automatically generated from your delivered orders.
+                            No payment records found matching your current filters.
                         </p>
                         {vendorShop && (
                             <div style={{ marginTop: '16px', fontSize: '14px', color: '#6b7280' }}>
                                 <p>Connected to: <strong>{vendorShop.name}</strong></p>
-                                <p>Payments are automatically generated when orders are marked as delivered.</p>
+                                <p>Payments will appear here when they are processed through the system.</p>
                             </div>
                         )}
                     </div>
@@ -1341,11 +1270,14 @@ const VendorPaymentsPage = () => {
                                     <th onClick={() => handleSort('date')}>
                                         Date {getSortIcon('date')}
                                     </th>
-                                    <th onClick={() => handleSort('customer')}>
-                                        Customer {getSortIcon('customer')}
+                                    <th onClick={() => handleSort('item')}>
+                                        Item {getSortIcon('item')}
                                     </th>
                                     <th onClick={() => handleSort('amount')}>
-                                        Vendor Amount {getSortIcon('amount')}
+                                        Amount {getSortIcon('amount')}
+                                    </th>
+                                    <th onClick={() => handleSort('status')}>
+                                        Status {getSortIcon('status')}
                                     </th>
                                     <th>Actions</th>
                                 </tr>
@@ -1356,20 +1288,25 @@ const VendorPaymentsPage = () => {
                                         <td>
                                             <div className="date-cell">
                                                 <Calendar size={14} />
-                                                <span>{formatDate(payment.transactionDate)}</span>
+                                                <span>{formatDate(payment.createdAt || payment.timestamp)}</span>
                                             </div>
                                         </td>
                                         <td>
-                                            <div className="customer-cell">
-                                                <User size={14} />
-                                                <div>
-                                                    <div className="customer-name">{payment.customer?.fullName || '- will update later'}</div>
-                                                    <div className="order-id">Order: #{payment.orderId || '- will update later'}</div>
-                                                </div>
+                                            <div className="item-cell">
+                                                <div className="item-name">{payment.itemName || 'Unknown Item'}</div>
+                                                <div className="ref-id">Ref: {payment.merchant_ref_id || 'N/A'}</div>
                                             </div>
                                         </td>
                                         <td className="amount-cell">
-                                            {formatCurrency(payment.vendorAmount)}
+                                            {formatCurrency(payment.amount || 0)}
+                                        </td>
+                                        <td className="status-cell">
+                                            {getStatusBadge(payment.status)}
+                                            {payment.checkingStatus && (
+                                                <span className="checking-status-indicator">
+                                                    <RefreshCw size={12} className="spinning" /> Checking...
+                                                </span>
+                                            )}
                                         </td>
                                         <td>
                                             <div className="actions-cell">
@@ -1380,6 +1317,16 @@ const VendorPaymentsPage = () => {
                                                 >
                                                     <Eye size={16} />
                                                 </button>
+                                                {payment.merchant_ref_id && (
+                                                    <button
+                                                        className="status-button"
+                                                        onClick={() => checkPaymentStatus(payment)}
+                                                        disabled={payment.checkingStatus}
+                                                        title="Check Status"
+                                                    >
+                                                        <RefreshCw size={16} className={payment.checkingStatus ? 'spinning' : ''} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
