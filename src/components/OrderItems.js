@@ -49,7 +49,7 @@ const OrderItems = ({ items, subtotal, deliveryCharge, tax, totalAmount, formatC
         ))}
       </div>
 
-      <div className="order-summary">
+      {/* <div className="order-summary">
         <div className="summary-row">
           <div className="summary-label">Subtotal :</div>
           <div className="summary-value">₹{formatPriceValue(subtotal)}</div>
@@ -62,7 +62,7 @@ const OrderItems = ({ items, subtotal, deliveryCharge, tax, totalAmount, formatC
           <div className="summary-label">Total :</div>
           <div className="summary-value">₹{formatPriceValue(totalWithoutTax)}</div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

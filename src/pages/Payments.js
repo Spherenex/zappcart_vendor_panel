@@ -1187,26 +1187,6 @@ const VendorPaymentsPage = () => {
                         <div className="stat-label">Total Vendor Earnings</div>
                     </div>
                 </div>
-                
-                <div className="stat-card pending">
-                    <div className="stat-icon">
-                        <Clock size={24} />
-                    </div>
-                    <div className="stat-content">
-                        <div className="stat-value">{formatCurrency(paymentStats.pendingAmount)}</div>
-                        <div className="stat-label">Pending Payments</div>
-                    </div>
-                </div>
-                
-                <div className="stat-card completed">
-                    <div className="stat-icon">
-                        <CheckCircle size={24} />
-                    </div>
-                    <div className="stat-content">
-                        <div className="stat-value">{formatCurrency(paymentStats.completedAmount)}</div>
-                        <div className="stat-label">Completed Payments</div>
-                    </div>
-                </div>
             </div>
 
             {/* Filters */}

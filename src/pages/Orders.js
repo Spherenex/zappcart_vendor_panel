@@ -1579,7 +1579,6 @@
 
 
 
-
 // VendorOrdersPage.js - Updated with Porter API integration for delivery
 import React, { useState, useEffect } from 'react';
 import { ref, onValue, update, get } from 'firebase/database';
@@ -1627,8 +1626,9 @@ const VendorOrderTimer = ({ order, onTimerExpire }) => {
 
   useEffect(() => {
     if (!order ||
-      (order.status !== 'pending_vendor_confirmation' &&
-        order.status !== 'pending_vendor_manual_acceptance') ||
+      ((order.status !== 'pending_vendor_confirmation' &&
+        order.status !== 'pending_vendor_manual_acceptance' &&
+        order.newStatus !== 'awaiting_vendor_confirmation')) ||
       !order.vendorAssignedAt) {
       setTimeRemaining(0);
       return;
@@ -1658,7 +1658,8 @@ const VendorOrderTimer = ({ order, onTimerExpire }) => {
 
   if (timeRemaining === 0 ||
     (order?.status !== 'pending_vendor_confirmation' &&
-      order?.status !== 'pending_vendor_manual_acceptance')) return null;
+      order?.status !== 'pending_vendor_manual_acceptance' &&
+      order?.newStatus !== 'awaiting_vendor_confirmation')) return null;
 
   const minutes = Math.floor(timeRemaining / 60000);
   const seconds = Math.floor((timeRemaining % 60000) / 1000);
@@ -1675,13 +1676,16 @@ const VendorOrderTimer = ({ order, onTimerExpire }) => {
   );
 };
 
-// Delivery Timer Component
+// Updated DeliveryTimer Component
 const DeliveryTimer = ({ order, onDeliveryComplete }) => {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isDeliveryComplete, setIsDeliveryComplete] = useState(false);
 
   useEffect(() => {
-    if (!order || order.status !== 'out_for_delivery' || !order.outForDeliveryAt) {
+    // Fixed condition to check both status and newStatus
+    if (!order || 
+        (order.status !== 'out_for_delivery' && order.newStatus !== 'out_for_delivery') || 
+        !order.outForDeliveryAt) {
       setTimeRemaining(0);
       return;
     }
@@ -1695,6 +1699,7 @@ const DeliveryTimer = ({ order, onDeliveryComplete }) => {
       setTimeRemaining(remaining);
 
       if (remaining === 0 && !isDeliveryComplete) {
+        console.log('Timer reached zero! Marking order as delivered:', order.id);
         setIsDeliveryComplete(true);
         if (onDeliveryComplete) {
           onDeliveryComplete(order.id);
@@ -1708,7 +1713,11 @@ const DeliveryTimer = ({ order, onDeliveryComplete }) => {
     return () => clearInterval(interval);
   }, [order, onDeliveryComplete, isDeliveryComplete]);
 
-  if (timeRemaining === 0 || order?.status !== 'out_for_delivery') return null;
+  // Fixed condition to check both status and newStatus
+  if (timeRemaining === 0 || 
+      (order?.status !== 'out_for_delivery' && order?.newStatus !== 'out_for_delivery')) {
+    return null;
+  }
 
   const minutes = Math.floor(timeRemaining / 60000);
   const seconds = Math.floor((timeRemaining % 60000) / 1000);
@@ -1721,6 +1730,11 @@ const DeliveryTimer = ({ order, onDeliveryComplete }) => {
       </span>
     </div>
   );
+};
+
+// Helper function to check status
+const hasStatus = (order, statusValue) => {
+  return order.status === statusValue || order.newStatus === statusValue;
 };
 
 // Order Card Component
@@ -1760,7 +1774,7 @@ const OrderCard = ({
   };
 
   return (
-    <div className={`order-card ${order.status} ${order.status === 'pending_vendor_confirmation' ? 'pending-confirmation' : ''}`}>
+    <div className={`order-card ${order.status} ${hasStatus(order, 'awaiting_vendor_confirmation') || hasStatus(order, 'pending_vendor_confirmation') ? 'pending-confirmation' : ''}`}>
       {/* Order Header */}
       <div className="order-header">
         <div className="order-id">
@@ -1769,7 +1783,7 @@ const OrderCard = ({
         </div>
         <div className="order-status">
           {getStatusIcon(order.status)}
-          <span>{getStatusText(order.status)}</span>
+          <span>{getStatusText(order)}</span>
         </div>
         {order.assignmentType && (
           <div className="assignment-type">
@@ -1781,15 +1795,17 @@ const OrderCard = ({
       </div>
 
       {/* Timer for pending confirmation */}
-      {order.status === 'pending_vendor_confirmation' && (
-        <VendorOrderTimer
-          order={order}
-          onTimerExpire={() => onTimerExpire(order.id)}
-        />
-      )}
+      {(hasStatus(order, 'pending_vendor_confirmation') ||
+        hasStatus(order, 'pending_vendor_manual_acceptance') ||
+        hasStatus(order, 'awaiting_vendor_confirmation')) && (
+          <VendorOrderTimer
+            order={order}
+            onTimerExpire={() => onTimerExpire(order.id)}
+          />
+        )}
 
       {/* Timer for out for delivery */}
-      {order.status === 'out_for_delivery' && (
+      {hasStatus(order, 'out_for_delivery') && (
         <DeliveryTimer
           order={order}
           onDeliveryComplete={onDeliveryComplete}
@@ -1823,9 +1839,7 @@ const OrderCard = ({
             </div>
           </div>
 
-          <div className="order-total">
-            <span>{formatCurrency(totalWithoutTax)}</span>
-          </div>
+          
         </div>
 
         <div className="order-time">
@@ -1892,8 +1906,10 @@ const OrderCard = ({
       </div>
 
       <div className="order-actions">
-        {(order.status === 'pending_vendor_confirmation' ||
-          order.status === 'pending_vendor_manual_acceptance') && (
+        {/* Check for pending confirmation or awaiting_vendor_confirmation */}
+        {(hasStatus(order, 'pending_vendor_confirmation') ||
+          hasStatus(order, 'pending_vendor_manual_acceptance') ||
+          hasStatus(order, 'awaiting_vendor_confirmation')) && (
             <div className="confirmation-actions">
               <button
                 className="accept-btn"
@@ -1913,7 +1929,9 @@ const OrderCard = ({
               </button>
             </div>
           )}
-        {order.status === 'processing' && (
+
+        {/* Check for processing status */}
+        {hasStatus(order, 'processing') && (
           <button
             className="update-btn"
             onClick={() => handleStatusUpdate('prepared')}
@@ -1924,7 +1942,8 @@ const OrderCard = ({
           </button>
         )}
 
-        {order.status === 'prepared' && (
+        {/* Check for prepared status */}
+        {hasStatus(order, 'prepared') && (
           <button
             className="update-btn"
             onClick={() => handleStatusUpdate('ready_for_pickup')}
@@ -1935,7 +1954,8 @@ const OrderCard = ({
           </button>
         )}
 
-        {order.status === 'ready_for_pickup' && (
+        {/* Check for ready_for_pickup status */}
+        {hasStatus(order, 'ready_for_pickup') && (
           <button
             className="assign-delivery-btn"
             onClick={() => onAssignDelivery(order.id)}
@@ -1946,7 +1966,8 @@ const OrderCard = ({
           </button>
         )}
 
-        {order.delivery && order.status === 'delivery_assigned' && (
+        {/* Check for delivery_assigned status */}
+        {order.delivery && hasStatus(order, 'delivery_assigned') && (
           <button
             className="out-for-delivery-btn"
             onClick={() => handleStatusUpdate('out_for_delivery')}
@@ -2082,7 +2103,6 @@ const VendorOrdersPage = () => {
         }));
 
         // Enhanced order filtering for vendor
-        // Enhanced order filtering for vendor
         const vendorOrders = ordersArray.filter(order => {
           // Check if order is assigned to this vendor
           if (order.vendor && (
@@ -2094,7 +2114,8 @@ const VendorOrdersPage = () => {
 
           // Check if order is pending confirmation for this vendor (both auto and manual)
           if ((order.status === 'pending_vendor_confirmation' ||
-            order.status === 'pending_vendor_manual_acceptance') &&
+            order.status === 'pending_vendor_manual_acceptance' ||
+            order.newStatus === 'awaiting_vendor_confirmation') &&
             order.assignedVendor && (
               order.assignedVendor.id === vendorShop.id ||
               order.assignedVendor.email?.toLowerCase() === vendorShop.email?.toLowerCase()
@@ -2107,10 +2128,13 @@ const VendorOrdersPage = () => {
 
         // Sort orders: pending confirmation first, then by date
         vendorOrders.sort((a, b) => {
-          if (a.status === 'pending_vendor_confirmation' && b.status !== 'pending_vendor_confirmation') {
+          // Orders with awaiting_vendor_confirmation newStatus should be at the top
+          if ((a.newStatus === 'awaiting_vendor_confirmation' || a.status === 'pending_vendor_confirmation') && 
+              !(b.newStatus === 'awaiting_vendor_confirmation' || b.status === 'pending_vendor_confirmation')) {
             return -1;
           }
-          if (b.status === 'pending_vendor_confirmation' && a.status !== 'pending_vendor_confirmation') {
+          if ((b.newStatus === 'awaiting_vendor_confirmation' || b.status === 'pending_vendor_confirmation') && 
+              !(a.newStatus === 'awaiting_vendor_confirmation' || a.status === 'pending_vendor_confirmation')) {
             return 1;
           }
           return new Date(b.orderDate) - new Date(a.orderDate);
@@ -2119,8 +2143,12 @@ const VendorOrdersPage = () => {
         setOrders(vendorOrders);
         calculateStats(vendorOrders);
 
-        // Check for new pending confirmations
-        const pendingConfirmations = vendorOrders.filter(o => o.status === 'pending_vendor_confirmation');
+        // Check for new pending confirmations - also check newStatus
+        const pendingConfirmations = vendorOrders.filter(o => 
+          o.status === 'pending_vendor_confirmation' || 
+          o.newStatus === 'awaiting_vendor_confirmation'
+        );
+        
         if (pendingConfirmations.length > 0) {
           setUnreadCount(pendingConfirmations.length);
 
@@ -2177,25 +2205,21 @@ const VendorOrdersPage = () => {
       const deliveryCharge = order.deliveryCharge || 0;
       const totalWithoutTax = subtotal + deliveryCharge;
 
-      switch (order.status) {
-        case 'pending_vendor_confirmation':
-          stats.pendingConfirmation++;
-          break;
-        case 'processing':
-        case 'prepared':
-        case 'ready_for_pickup':
-        case 'delivery_assigned':
-          stats.processing++;
-          break;
-        case 'out_for_delivery':
-          stats.outForDelivery++;
-          break;
-        case 'delivered':
-          stats.completed++;
-          stats.revenue += totalWithoutTax; // Use total without tax for revenue
-          break;
-        default:
-          break;
+      // Check both status and newStatus for awaiting confirmation
+      if (order.status === 'pending_vendor_confirmation' || 
+          order.status === 'pending_vendor_manual_acceptance' ||
+          order.newStatus === 'awaiting_vendor_confirmation') {
+        stats.pendingConfirmation++;
+      } else if (order.status === 'processing' || order.newStatus === 'processing' ||
+                order.status === 'prepared' || order.newStatus === 'prepared' ||
+                order.status === 'ready_for_pickup' || order.newStatus === 'ready_for_pickup' ||
+                order.status === 'delivery_assigned' || order.newStatus === 'delivery_assigned') {
+        stats.processing++;
+      } else if (order.status === 'out_for_delivery' || order.newStatus === 'out_for_delivery') {
+        stats.outForDelivery++;
+      } else if (order.status === 'delivered' || order.newStatus === 'delivered') {
+        stats.completed++;
+        stats.revenue += totalWithoutTax; // Use total without tax for revenue
       }
     });
 
@@ -2230,6 +2254,7 @@ const VendorOrdersPage = () => {
 
       await update(orderRef, {
         status: 'processing',
+        newStatus: 'processing', // Update newStatus too
         vendor: {
           id: vendorShop.id,
           name: vendorShop.name,
@@ -2291,6 +2316,7 @@ const VendorOrdersPage = () => {
       // Update to 'pending' instead of 'pending_manual_assignment' to align with admin panel
       await update(orderRef, {
         status: 'pending',
+        newStatus: 'awaiting_vendor_confirmation', // Keep newStatus as awaiting_vendor_confirmation
         assignedVendor: null,
         rejectedBy: orderData.rejectedBy
           ? [...orderData.rejectedBy, vendorShop.id]
@@ -2332,8 +2358,10 @@ const VendorOrdersPage = () => {
       const orderData = snapshot.val();
 
       // Only auto-reject if the order is still in pending confirmation state (auto or manual)
+      // or has newStatus awaiting_vendor_confirmation
       if (orderData.status !== 'pending_vendor_confirmation' &&
-        orderData.status !== 'pending_vendor_manual_acceptance') {
+          orderData.status !== 'pending_vendor_manual_acceptance' &&
+          orderData.newStatus !== 'awaiting_vendor_confirmation') {
         return;
       }
 
@@ -2348,6 +2376,7 @@ const VendorOrdersPage = () => {
 
       await update(orderRef, {
         status: 'pending',
+        newStatus: 'awaiting_vendor_confirmation', // Keep newStatus as awaiting_vendor_confirmation
         assignedVendor: null,
         rejectedBy: orderData.rejectedBy
           ? [...orderData.rejectedBy, vendorShop.id]
@@ -2398,6 +2427,7 @@ const VendorOrdersPage = () => {
 
       const updateData = {
         status: newStatus,
+        newStatus: newStatus, // Update newStatus too
         timeline: updatedTimeline,
         lastUpdated: new Date().toISOString()
       };
@@ -2412,7 +2442,7 @@ const VendorOrdersPage = () => {
       setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'success',
-        message: `Order status updated to ${getStatusText(newStatus)}`,
+        message: `Order status updated to ${getStatusText({status: newStatus})}`,
         timestamp: new Date().toISOString()
       }]);
 
@@ -2442,7 +2472,8 @@ const VendorOrdersPage = () => {
 
       // Set status to "assigning_delivery" to prevent multiple assignments
       await update(orderRef, {
-        status: 'assigning_delivery'
+        status: 'assigning_delivery',
+        newStatus: 'assigning_delivery' // Update newStatus too
       });
 
       // Show loading notification
@@ -2583,6 +2614,7 @@ const VendorOrdersPage = () => {
 
       await update(orderRef, {
         status: 'delivery_assigned',
+        newStatus: 'delivery_assigned', // Update newStatus too
         delivery: {
           provider: 'Porter',
           trackingId: deliveryInfo.order_id,
@@ -2610,7 +2642,8 @@ const VendorOrdersPage = () => {
       // Revert status if assignment fails
       const orderRef = ref(db, `orders/${orderId}`);
       await update(orderRef, {
-        status: 'ready_for_pickup'
+        status: 'ready_for_pickup',
+        newStatus: 'ready_for_pickup' // Update newStatus too
       });
 
       setNotifications(prev => [...prev, {
@@ -2650,6 +2683,7 @@ const VendorOrdersPage = () => {
 
       await update(orderRef, {
         status: 'delivered',
+        newStatus: 'delivered', // Update newStatus too
         deliveredAt: new Date().toISOString(),
         timeline: updatedTimeline
       });
@@ -2672,7 +2706,9 @@ const VendorOrdersPage = () => {
 
     // Status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
+      filtered = filtered.filter(order => 
+        order.status === statusFilter || order.newStatus === statusFilter
+      );
     }
 
     // Search filter
@@ -2746,8 +2782,15 @@ const VendorOrdersPage = () => {
     }
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
+  // FIXED: Corrected to take an order object instead of just status string
+  const getStatusText = (order) => {
+    // First check for newStatus
+    if (order.newStatus === 'awaiting_vendor_confirmation') {
+      return 'Awaiting Your Confirmation';
+    }
+    
+    // If no newStatus or not awaiting_vendor_confirmation, check status
+    switch (order.status) {
       case 'pending_vendor_confirmation': return 'Awaiting Your Confirmation';
       case 'pending_vendor_manual_acceptance': return 'Awaiting Your Confirmation (Manual)';
       case 'processing': return 'Processing';
@@ -2757,7 +2800,7 @@ const VendorOrdersPage = () => {
       case 'out_for_delivery': return 'Out for Delivery';
       case 'delivered': return 'Delivered';
       case 'cancelled': return 'Cancelled';
-      default: return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      default: return order.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
   };
 
@@ -2831,18 +2874,20 @@ const VendorOrdersPage = () => {
           <h1>Order Details - #{order.id.slice(-6).toUpperCase()}</h1>
           <div className="order-status-badge">
             {getStatusIcon(order.status)}
-            <span>{getStatusText(order.status)}</span>
+            <span>{getStatusText(order)}</span>
           </div>
         </div>
 
-        {order.status === 'pending_vendor_confirmation' && (
-          <VendorOrderTimer
-            order={order}
-            onTimerExpire={() => handleTimerExpire(order.id)}
-          />
-        )}
+        {(order.status === 'pending_vendor_confirmation' ||
+          order.status === 'pending_vendor_manual_acceptance' ||
+          order.newStatus === 'awaiting_vendor_confirmation') && (
+            <VendorOrderTimer
+              order={order}
+              onTimerExpire={() => handleTimerExpire(order.id)}
+            />
+          )}
 
-        {order.status === 'out_for_delivery' && (
+        {(order.status === 'out_for_delivery' || order.newStatus === 'out_for_delivery') && (
           <DeliveryTimer
             order={order}
             onDeliveryComplete={handleDeliveryComplete}
@@ -2923,7 +2968,7 @@ const VendorOrdersPage = () => {
                   <div key={idx} className="timeline-item">
                     <div className="timeline-marker"></div>
                     <div className="timeline-content">
-                      <div className="timeline-status">{getStatusText(event.status)}</div>
+                      <div className="timeline-status">{getStatusText({status: event.status})}</div>
                       <div className="timeline-time">{formatDate(event.time)}</div>
                       {event.note && <div className="timeline-note">{event.note}</div>}
                     </div>
@@ -2935,26 +2980,30 @@ const VendorOrdersPage = () => {
 
           {/* Action Buttons */}
           <div className="order-actions-detail">
-            {order.status === 'pending_vendor_confirmation' && (
-              <div className="confirmation-actions-detail">
-                <button
-                  className="accept-button-large"
-                  onClick={() => handleAcceptOrder(order.id)}
-                >
-                  <ThumbsUp size={20} />
-                  Accept This Order
-                </button>
-                <button
-                  className="reject-button-large"
-                  onClick={() => handleRejectOrder(order.id)}
-                >
-                  <ThumbsDown size={20} />
-                  Reject Order
-                </button>
-              </div>
-            )}
+            {/* Check for pending confirmation or awaiting_vendor_confirmation */}
+            {(order.status === 'pending_vendor_confirmation' ||
+              order.status === 'pending_vendor_manual_acceptance' ||
+              order.newStatus === 'awaiting_vendor_confirmation') && (
+                <div className="confirmation-actions-detail">
+                  <button
+                    className="accept-button-large"
+                    onClick={() => handleAcceptOrder(order.id)}
+                  >
+                    <ThumbsUp size={20} />
+                    Accept This Order
+                  </button>
+                  <button
+                    className="reject-button-large"
+                    onClick={() => handleRejectOrder(order.id)}
+                  >
+                    <ThumbsDown size={20} />
+                    Reject Order
+                  </button>
+                </div>
+              )}
 
-            {order.status === 'processing' && (
+            {/* Check for processing status */}
+            {(order.status === 'processing' || order.newStatus === 'processing') && (
               <button
                 className="update-button-large"
                 onClick={() => handleStatusUpdate(order.id, 'prepared')}
@@ -2964,7 +3013,8 @@ const VendorOrdersPage = () => {
               </button>
             )}
 
-            {order.status === 'prepared' && (
+            {/* Check for prepared status */}
+            {(order.status === 'prepared' || order.newStatus === 'prepared') && (
               <button
                 className="update-button-large"
                 onClick={() => handleStatusUpdate(order.id, 'ready_for_pickup')}
@@ -2974,7 +3024,8 @@ const VendorOrdersPage = () => {
               </button>
             )}
 
-            {order.status === 'ready_for_pickup' && (
+            {/* Check for ready_for_pickup status */}
+            {(order.status === 'ready_for_pickup' || order.newStatus === 'ready_for_pickup') && (
               <button
                 className="update-button-large"
                 onClick={() => handleAssignDelivery(order.id)}
@@ -2984,7 +3035,8 @@ const VendorOrdersPage = () => {
               </button>
             )}
 
-            {order.delivery && order.status === 'delivery_assigned' && (
+            {/* Check for delivery_assigned status */}
+            {order.delivery && (order.status === 'delivery_assigned' || order.newStatus === 'delivery_assigned') && (
               <button
                 className="update-button-large"
                 onClick={() => handleStatusUpdate(order.id, 'out_for_delivery')}
@@ -3081,7 +3133,7 @@ const VendorOrdersPage = () => {
           </div>
         </div>
 
-        <div className="stat-card completed">
+        {/* <div className="stat-card completed">
           <div className="stat-icon">
             <TrendingUp size={24} />
           </div>
@@ -3089,7 +3141,7 @@ const VendorOrdersPage = () => {
             <div className="stat-value">{formatCurrency(orderStats.revenue)}</div>
             <div className="stat-label">Revenue</div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Filters */}
@@ -3140,7 +3192,7 @@ const VendorOrdersPage = () => {
             <p>
               {statusFilter === 'all'
                 ? "No orders found for your shop."
-                : `No orders found with status: ${getStatusText(statusFilter)}`
+                : `No orders found with status: ${getStatusText({status: statusFilter})}`
               }
             </p>
           </div>

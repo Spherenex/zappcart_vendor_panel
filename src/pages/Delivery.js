@@ -1869,14 +1869,10 @@ const Delivery = () => {
                       <li key={index} className="item">
                         <div className="item-name">{item.name}</div>
                         <div className="item-quantity">x{item.quantity || 1}</div>
-                        <div className="item-price">{formatCurrency((item.price || 0) * (item.quantity || 1))}</div>
                       </li>
                     ))}
                   </ul>
-                  <div className="order-total">
-                    <span>Total:</span>
-                    <span>{formatCurrency(delivery.totalAmount)}</span>
-                  </div>
+                 
                 </div>
                 
                 <div className="delivery-info">
@@ -1929,7 +1925,7 @@ const Delivery = () => {
                 </div>
               </div>
               
-              <div className="delivery-actions">
+              {/* <div className="delivery-actions">
                 <button 
                   className="view-details-btn"
                   onClick={() => handleViewDeliveryDetails(delivery.id)}
@@ -1937,7 +1933,7 @@ const Delivery = () => {
                   <Eye size={16} />
                   View Details
                 </button>
-              </div>
+              </div> */}
             </div>
           ))}
         </div>
